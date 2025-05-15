@@ -43,32 +43,45 @@ const TaskCard: React.FC<TaskCardProps> = ({
         return 'bg-[#f5f0e8]';
     }
   };
-  return <div className="bg-white rounded-xl p-5 hover:shadow-sm transition-all">
-      <h3 className="text-[#3a3226] font-medium mb-3">{title}</h3>
-      <div className="flex items-center mb-4">
-        <div className="flex items-center text-[#7a7067] text-sm mr-4">
-          <CalendarIcon className="h-4 w-4 mr-1" />
-          <span>{dueDate}</span>
+  return (
+    <div className="bg-white rounded-xl p-4 md:p-5 hover:shadow-sm transition-all shadow-sm h-full flex flex-col">
+      <h3 className="text-[#3a3226] font-medium text-base md:text-lg mb-3 line-clamp-2">{title}</h3>
+
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <div className="flex items-center text-[#7a7067] text-xs md:text-sm">
+          <CalendarIcon className="h-4 w-4 mr-1 flex-shrink-0" />
+          <span className="truncate">{dueDate}</span>
         </div>
-        <div className={`flex items-center text-sm ${getPriorityColor(priority)}`}>
-          <AlertTriangleIcon className="h-4 w-4 mr-1" />
+        <div className={`flex items-center text-xs md:text-sm ${getPriorityColor(priority)}`}>
+          <AlertTriangleIcon className="h-4 w-4 mr-1 flex-shrink-0" />
           <span>{priority}</span>
         </div>
       </div>
+
       <div className="h-2 bg-[#f5f0e8] rounded-full mb-4">
-        <div className="h-full rounded-full bg-[#d4a5a5]" style={{
-        width: `${progress}%`
-      }}></div>
+        <div
+          className="h-full rounded-full bg-[#d4a5a5] transition-all duration-300"
+          style={{
+            width: `${progress}%`
+          }}
+        ></div>
       </div>
-      <div className="flex justify-between items-center">
-        <div className="flex items-center">
-          <Avatar src={assignee.avatar} alt={assignee.name} size="sm" className="mr-2" />
-          <span className="text-sm text-[#7a7067]">{assignee.name}</span>
+
+      <div className="flex flex-wrap justify-between items-center gap-2 mt-auto">
+        <div className="flex items-center min-w-0">
+          <Avatar
+            src={assignee.avatar}
+            alt={assignee.name}
+            size="sm"
+            className="mr-2 flex-shrink-0"
+          />
+          <span className="text-xs md:text-sm text-[#7a7067] truncate">{assignee.name}</span>
         </div>
-        <div className={`px-3 py-1 rounded-full text-xs ${getPriorityBg(priority)} ${getPriorityColor(priority)}`}>
+        <div className={`px-2 py-1 rounded-full text-xs ${getPriorityBg(priority)} ${getPriorityColor(priority)} whitespace-nowrap`}>
           {progress}% complete
         </div>
       </div>
-    </div>;
+    </div>
+  );
 };
 export default TaskCard;
