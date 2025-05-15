@@ -65,7 +65,7 @@ const TaskBoard = () => {
             }
 
             // Clear the URL parameter after handling it
-            navigate('/task-board', { replace: true });
+            navigate('/taskboard', { replace: true });
           }
         }
       } else {

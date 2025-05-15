@@ -357,7 +357,7 @@ const Dashboard = () => {
           <h2 className="font-['Caveat',_cursive] text-2xl text-[#3a3226]">
             Today's Tasks
           </h2>
-          <Link to="/task-board" className="text-[#d4a5a5] font-medium">View all</Link>
+          <Link to="/taskboard" className="text-[#d4a5a5] font-medium">View all</Link>
         </div>
 
         {loading.tasks ? (
@@ -386,7 +386,7 @@ const Dashboard = () => {
           <div className="bg-white rounded-xl p-6 text-center">
             <p className="text-[#7a7067] mb-4">No tasks due today</p>
             <Link
-              to="/task-board"
+              to="/taskboard"
               className="inline-block px-4 py-2 bg-[#d4a5a5] text-white rounded-lg"
             >
               View all tasks
@@ -412,7 +412,7 @@ const Dashboard = () => {
               };
 
               return (
-                <div key={task.id} onClick={() => navigate(`/task-board?task=${task.id}`)}>
+                <div key={task.id} onClick={() => navigate(`/taskboard?task=${task.id}`)}>
                   <TaskCard
                     title={task.title}
                     dueDate={formatDueDate(task.dueDate)}
@@ -501,7 +501,7 @@ const Dashboard = () => {
                     </div>
                     <button
                       className="text-[#d4a5a5]"
-                      onClick={() => navigate(`/task-board?task=${task.id}`)}
+                      onClick={() => navigate(`/taskboard?task=${task.id}`)}
                     >
                       View
                     </button>
