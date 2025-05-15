@@ -1,0 +1,30 @@
+{
+  "rules": {
+    ".read": "auth != null",
+    ".write": "auth != null",
+    "users": {
+      ".read": true,
+      ".write": "auth != null",
+      "$uid": {
+        ".read": true,
+        ".write": "auth != null && (root.child('users').child($uid).child('email').val() === auth.token.email || root.child('users').child($uid).child('role').val() === 'admin')"
+      }
+    },
+    "tasks": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "notifications": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "events": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "leads": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    }
+  }
+}

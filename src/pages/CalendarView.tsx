@@ -1,60 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
+import { fetchData, addData, updateData, removeData } from '../firebase/database';
+import { defaultEvents } from '../firebase/initData';
+
 interface Event {
   id: string;
   title: string;
-  date: Date;
+  date: string; // Store as ISO string for Firebase compatibility
   type: 'task' | 'meeting' | 'deadline';
   assignee?: {
     name: string;
     avatar: string;
   };
 }
-const mockEvents: Event[] = [{
-  id: '1',
-  title: 'Team Weekly Meeting',
-  date: new Date(2023, 6, 10, 10, 0),
-  type: 'meeting'
-}, {
-  id: '2',
-  title: 'Client Presentation',
-  date: new Date(2023, 6, 12, 14, 0),
-  type: 'meeting',
-  assignee: {
-    name: 'Emma Chen',
-    avatar: 'https://i.pravatar.cc/150?img=5'
-  }
-}, {
-  id: '3',
-  title: 'Website Redesign Deadline',
-  date: new Date(2023, 6, 15),
-  type: 'deadline'
-}, {
-  id: '4',
-  title: 'Finalize Marketing Assets',
-  date: new Date(2023, 6, 18),
-  type: 'task',
-  assignee: {
-    name: 'Jordan Lee',
-    avatar: 'https://i.pravatar.cc/150?img=32'
-  }
-}, {
-  id: '5',
-  title: 'Quarterly Planning',
-  date: new Date(2023, 6, 25, 9, 0),
-  type: 'meeting'
-}, {
-  id: '6',
-  title: 'Brand Guidelines Review',
-  date: new Date(2023, 6, 20),
-  type: 'task',
-  assignee: {
-    name: 'Alex Kim',
-    avatar: 'https://i.pravatar.cc/150?img=11'
-  }
-}];
 const CalendarView = () => {
   const {
     isAdmin
@@ -62,10 +22,28 @@ const CalendarView = () => {
   const {
     addNotification
   } = useNotifications();
+
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [events, setEvents] = useState<Event[]>(mockEvents);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+
+  // Fetch events from Firebase
+  useEffect(() => {
+    const unsubscribe = fetchData<Event[]>('events', (data) => {
+      if (data) {
+        setEvents(data);
+      } else {
+        setEvents([]);
+      }
+      setLoading(false);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
   const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
   const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
   const prevMonth = () => {
@@ -82,7 +60,12 @@ const CalendarView = () => {
   };
   const getEventsByDate = (day: number) => {
     const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-    return events.filter(event => event.date.getDate() === date.getDate() && event.date.getMonth() === date.getMonth() && event.date.getFullYear() === date.getFullYear());
+    return events.filter(event => {
+      const eventDate = new Date(event.date);
+      return eventDate.getDate() === date.getDate() &&
+             eventDate.getMonth() === date.getMonth() &&
+             eventDate.getFullYear() === date.getFullYear();
+    });
   };
   const getEventTypeColor = (type: string) => {
     switch (type) {
@@ -103,7 +86,7 @@ const CalendarView = () => {
     setSelectedDate(selectedDate);
     setIsModalOpen(true);
   };
-  const handleAddEvent = (e: React.FormEvent) => {
+  const handleAddEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
@@ -112,7 +95,9 @@ const CalendarView = () => {
     const startTime = formData.get('startTime') as string;
     const assignee = formData.get('assignee') as string;
     const notes = formData.get('notes') as string;
+
     if (!selectedDate || !title || !type) return;
+
     const assigneeMap = {
       'Emma Chen': {
         name: 'Emma Chen',
@@ -127,23 +112,34 @@ const CalendarView = () => {
         avatar: 'https://i.pravatar.cc/150?img=32'
       }
     };
-    const [hours, minutes] = startTime ? startTime.split(':') : ['0', '0'];
-    const eventDate = new Date(selectedDate);
-    eventDate.setHours(parseInt(hours), parseInt(minutes));
-    const newEvent: Event = {
-      id: `event-${Date.now()}`,
-      title,
-      date: eventDate,
-      type,
-      assignee: assignee ? assigneeMap[assignee as keyof typeof assigneeMap] : undefined
-    };
-    setEvents([...events, newEvent]);
-    setIsModalOpen(false);
-    addNotification({
-      title: 'New Event Created',
-      message: `Event "${newEvent.title}" has been scheduled for ${newEvent.date.toLocaleDateString()}`,
-      type: 'event'
-    });
+
+    try {
+      const [hours, minutes] = startTime ? startTime.split(':') : ['0', '0'];
+      const eventDate = new Date(selectedDate);
+      eventDate.setHours(parseInt(hours), parseInt(minutes));
+
+      // Create new event with ISO string date for Firebase
+      const newEvent = {
+        title,
+        date: eventDate.toISOString(),
+        type,
+        assignee: assignee ? assigneeMap[assignee as keyof typeof assigneeMap] : undefined
+      };
+
+      // Add event to Firebase
+      await addData('events', newEvent);
+
+      setIsModalOpen(false);
+
+      // Add notification
+      await addNotification({
+        title: 'New Event Created',
+        message: `Event "${newEvent.title}" has been scheduled for ${eventDate.toLocaleDateString()}`,
+        type: 'event'
+      });
+    } catch (error) {
+      console.error('Error adding event:', error);
+    }
   };
   const renderCalendarDays = () => {
     const days = [];
@@ -162,9 +158,9 @@ const CalendarView = () => {
     for (let day = 1; day <= daysInMonth; day++) {
       const dayEvents = getEventsByDate(day);
       const isToday = new Date().getDate() === day && new Date().getMonth() === currentDate.getMonth() && new Date().getFullYear() === currentDate.getFullYear();
-      days.push(<div key={`day-${day}`} className={`border border-[#f5f0e8] p-2 h-28 overflow-hidden 
-            ${isAdmin() ? 'hover:bg-[#f5f0e8]/30 cursor-pointer' : ''} 
-            transition-colors 
+      days.push(<div key={`day-${day}`} className={`border border-[#f5f0e8] p-2 h-28 overflow-hidden
+            ${isAdmin() ? 'hover:bg-[#f5f0e8]/30 cursor-pointer' : ''}
+            transition-colors
             ${isToday ? 'bg-[#f5f0e8]/50' : ''}`} onClick={() => handleDateClick(day)}>
           <div className="flex justify-between items-center mb-2">
             <span className={`text-sm ${isToday ? 'font-bold text-[#d4a5a5]' : 'text-[#3a3226]'}`}>
@@ -220,7 +216,14 @@ const CalendarView = () => {
             </button>
           </div>
         </div>
-        <div className="grid grid-cols-7 gap-1">{renderCalendarDays()}</div>
+
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="text-[#7a7067]">Loading events...</div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-7 gap-1">{renderCalendarDays()}</div>
+        )}
       </div>
       {/* Add Event Modal */}
       {isModalOpen && selectedDate && <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">

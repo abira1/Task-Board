@@ -1,5 +1,21 @@
 import React, { useState } from 'react';
 import { XIcon } from 'lucide-react';
+
+// Define Task interface
+interface Task {
+  id: string;
+  title: string;
+  description: string;
+  status: 'todo' | 'inProgress' | 'done';
+  priority: 'Low' | 'Medium' | 'High';
+  dueDate?: string;
+  assignee: {
+    name: string;
+    avatar: string;
+  };
+  progress?: number;
+}
+
 interface TaskFormProps {
   onClose: () => void;
   onSubmit: (task: {
@@ -26,7 +42,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
   const [description, setDescription] = useState(initialTask?.description || '');
   const [priority, setPriority] = useState<'Low' | 'Medium' | 'High'>(initialTask?.priority || 'Medium');
   const [status, setStatus] = useState<'todo' | 'inProgress' | 'done'>(initialTask?.status || initialStatus);
-  const [dueDate, setDueDate] = useState(initialTask?.dueDate ? initialTask.dueDate.toISOString().split('T')[0] : '');
+  const [dueDate, setDueDate] = useState(initialTask?.dueDate ? new Date(initialTask.dueDate).toISOString().split('T')[0] : '');
   const [assignee, setAssignee] = useState(initialTask?.assignee.name || '');
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

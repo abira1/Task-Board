@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Download Image</title>
+    <script>
+        window.onload = function() {
+            // Create links to download images
+            var links = [
+                { url: 'https://i.imgur.com/Yx9Yvxl.png', filename: 'toiral-logo.png' },
+                { url: 'https://i.imgur.com/Yx9Yvxl.png', filename: 'Toiral_TaskBoard_Logo_.png' }
+            ];
+            
+            links.forEach(function(link) {
+                var a = document.createElement('a');
+                a.href = link.url;
+                a.download = link.filename;
+                a.textContent = 'Download ' + link.filename;
+                a.style.display = 'block';
+                a.style.margin = '10px';
+                document.body.appendChild(a);
+                
+                // Auto-click the link
+                a.click();
+            });
+        };
+    </script>
+</head>
+<body>
+    <h1>Downloading images...</h1>
+</body>
+</html>

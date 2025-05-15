@@ -1,5 +1,6 @@
 import React from 'react';
 import { CalendarIcon, AlertTriangleIcon } from 'lucide-react';
+import Avatar from './Avatar';
 interface Assignee {
   name: string;
   avatar: string;
@@ -61,7 +62,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
       </div>
       <div className="flex justify-between items-center">
         <div className="flex items-center">
-          <img src={assignee.avatar} alt={assignee.name} className="w-8 h-8 rounded-full mr-2" />
+          <Avatar src={assignee.avatar} alt={assignee.name} size="sm" className="mr-2" />
           <span className="text-sm text-[#7a7067]">{assignee.name}</span>
         </div>
         <div className={`px-3 py-1 rounded-full text-xs ${getPriorityBg(priority)} ${getPriorityColor(priority)}`}>
