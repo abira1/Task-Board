@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://toiral-taskboard.web.app/sitemap.xml

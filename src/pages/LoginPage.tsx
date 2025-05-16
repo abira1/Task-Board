@@ -55,6 +55,9 @@ const LoginPage = () => {
             <p className="text-[#7a7067] text-sm">
               Use your Google account to access Toiral Task Board
             </p>
+            <p className="text-[#7a7067] text-sm mt-2">
+              Want to install the app? <a href="/download" className="text-[#d4a5a5] hover:underline">Visit our download page</a>
+            </p>
           </div>
 
           <button

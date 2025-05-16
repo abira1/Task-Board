@@ -1,5 +1,10 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { PlusIcon, FilterIcon, ChevronDownIcon, ChevronUpIcon, XIcon, MinusIcon, PlusCircleIcon, Trash2Icon, AlertTriangleIcon } from 'lucide-react';
+import {
+  PlusIcon, FilterIcon, ChevronDownIcon, ChevronUpIcon, XIcon, MinusIcon,
+  PlusCircleIcon, Trash2Icon, AlertTriangleIcon, CalendarIcon, ClockIcon,
+  CheckCircleIcon, ListTodoIcon, BarChart3Icon, MessageSquareIcon, InfoIcon,
+  EditIcon, SlidersHorizontal, ArrowRightIcon, UserIcon, SendIcon
+} from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import TaskForm from '../components/TaskForm';
 import { useNotifications } from '../contexts/NotificationContext';
@@ -7,6 +12,27 @@ import { fetchData, addData, updateData, removeData } from '../firebase/database
 import { defaultTasks } from '../firebase/initData';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Avatar from '../components/Avatar';
+
+interface TaskComment {
+  id: string;
+  text: string;
+  createdAt: string;
+  createdBy: {
+    name: string;
+    avatar: string;
+  };
+}
+
+interface TaskHistoryItem {
+  id: string;
+  action: string;
+  timestamp: string;
+  user: {
+    name: string;
+    avatar: string;
+  };
+  details?: string;
+}
 
 interface Task {
   id: string;
@@ -20,6 +46,10 @@ interface Task {
     avatar: string;
   };
   progress?: number;
+  comments?: TaskComment[];
+  history?: TaskHistoryItem[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 const TaskBoard = () => {
   const {
@@ -46,6 +76,10 @@ const TaskBoard = () => {
   // State for delete confirmation modal
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState<{id: string, title: string} | null>(null);
+
+  // State for task detail modal tabs
+  const [activeTaskTab, setActiveTaskTab] = useState<'details' | 'activity'>('details');
+  const [newComment, setNewComment] = useState('');
 
   // Fetch tasks from Firebase
   useEffect(() => {
@@ -92,6 +126,41 @@ const TaskBoard = () => {
   const canUpdateProgress = (task: Task) => {
     return isAdmin() || task.assignee.name === user?.name;
   };
+
+  // Helper function to format dates in a user-friendly way
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'N/A';
+
+    const date = new Date(dateString);
+
+    // Check if date is today
+    const today = new Date();
+    const isToday = date.getDate() === today.getDate() &&
+                    date.getMonth() === today.getMonth() &&
+                    date.getFullYear() === today.getFullYear();
+
+    // Check if date is yesterday
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const isYesterday = date.getDate() === yesterday.getDate() &&
+                         date.getMonth() === yesterday.getMonth() &&
+                         date.getFullYear() === yesterday.getFullYear();
+
+    if (isToday) {
+      return `Today at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    } else if (isYesterday) {
+      return `Yesterday at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    } else {
+      return date.toLocaleDateString([], {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      }) + ' at ' + date.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+  };
   const tasksByMember = useMemo(() => {
     const filtered = tasks.filter(task => {
       const priorityMatch = filterPriority === 'all' || task.priority === filterPriority;
@@ -126,12 +195,29 @@ const TaskBoard = () => {
       // Ensure assignee has valid data
       const validatedAssignee = ensureValidAssignee(newTask.assignee);
 
+      const now = new Date().toISOString();
+
+      // Create history item for task creation
+      const historyItem: TaskHistoryItem = {
+        id: Date.now().toString(),
+        action: 'task_created',
+        timestamp: now,
+        user: {
+          name: user?.name || 'Anonymous',
+          avatar: user?.photoURL || user?.avatar || ''
+        },
+        details: 'Task was created'
+      };
+
       // Convert Date object to ISO string if it exists
       const taskWithStringDate = {
         ...newTask,
         assignee: validatedAssignee,
         dueDate: newTask.dueDate ? new Date(newTask.dueDate).toISOString() : undefined,
-        progress: 0
+        progress: 0, // Not Started
+        createdAt: now,
+        updatedAt: now,
+        history: [historyItem]
       };
 
       // Add task to Firebase
@@ -176,12 +262,66 @@ const TaskBoard = () => {
         return 'text-[#7a7067]';
     }
   };
+  // Helper function to convert progress state to percentage
+  const progressStateToPercentage = (state: string): number => {
+    switch (state) {
+      case 'not-started':
+        return 0;
+      case 'in-progress':
+        return 50;
+      case 'completed':
+        return 100;
+      default:
+        return 0;
+    }
+  };
+
+  // Helper function to convert percentage to progress state
+  const percentageToProgressState = (percentage: number): string => {
+    if (percentage === 0) return 'not-started';
+    if (percentage === 100) return 'completed';
+    return 'in-progress';
+  };
+
+  // Helper function to get human-readable progress state label
+  const getProgressStateLabel = (state: string): string => {
+    switch (state) {
+      case 'not-started':
+        return 'Not Started';
+      case 'in-progress':
+        return 'In Progress';
+      case 'completed':
+        return 'Completed';
+      default:
+        return 'Not Started';
+    }
+  };
+
+  // Function to handle progress state update
+  const handleProgressStateUpdate = async (taskId: string, newState: 'not-started' | 'in-progress' | 'completed') => {
+    // Convert state to percentage
+    const newProgress = progressStateToPercentage(newState);
+
+    // Call the existing progress update function with the new percentage
+    await handleProgressUpdate(taskId, newProgress);
+  };
+
   const handleProgressUpdate = async (taskId: string, newProgress: number) => {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
 
-    // Ensure progress stays within bounds
-    const boundedProgress = Math.min(100, Math.max(0, newProgress));
+    // Normalize progress to one of the three states (0%, 50%, 100%)
+    let boundedProgress: number;
+    if (newProgress === 0) {
+      boundedProgress = 0; // Not Started
+    } else if (newProgress === 100) {
+      boundedProgress = 100; // Completed
+    } else {
+      boundedProgress = 50; // In Progress
+    }
+
+    // Skip if progress hasn't changed
+    if (task.progress === boundedProgress) return;
 
     if (!canUpdateProgress(task)) {
       await addNotification({
@@ -195,28 +335,53 @@ const TaskBoard = () => {
     try {
       // Determine new status based on progress
       const newStatus = boundedProgress === 100 ? 'done' : boundedProgress > 0 ? 'inProgress' : 'todo';
+      const oldStatus = task.status;
+      const statusChanged = oldStatus !== newStatus;
+
+      // Get progress state labels for history
+      const oldProgressState = percentageToProgressState(task.progress || 0);
+      const newProgressState = percentageToProgressState(boundedProgress);
+
+      // Create history item for this action
+      const historyItem: TaskHistoryItem = {
+        id: Date.now().toString(),
+        action: 'progress_updated',
+        timestamp: new Date().toISOString(),
+        user: {
+          name: user?.name || 'Anonymous',
+          avatar: user?.photoURL || user?.avatar || ''
+        },
+        details: `Updated progress from "${getProgressStateLabel(oldProgressState)}" to "${getProgressStateLabel(newProgressState)}"${
+          statusChanged ? ` and status from ${oldStatus} to ${newStatus}` : ''
+        }`
+      };
+
+      // Get existing history or initialize empty array
+      const existingHistory = task.history || [];
 
       // Update task in Firebase
       await updateData('tasks', taskId, {
         progress: boundedProgress,
-        status: newStatus
+        status: newStatus,
+        history: [...existingHistory, historyItem],
+        updatedAt: new Date().toISOString()
       });
 
-      // Only notify on significant milestones
-      if (boundedProgress % 25 === 0 || boundedProgress === 100) {
-        await addNotification({
-          title: 'Progress Updated',
-          message: `${task.title} is now ${boundedProgress}% complete`,
-          type: 'task'
-        });
-      }
+      // Notify on progress state changes
+      await addNotification({
+        title: 'Progress Updated',
+        message: `${task.title} is now ${getProgressStateLabel(newProgressState)}`,
+        type: 'task'
+      });
 
       // Update the selected task's progress if it's open
       if (selectedTask && selectedTask.id === taskId) {
         setSelectedTask(prev => prev ? {
           ...prev,
           progress: boundedProgress,
-          status: newStatus
+          status: newStatus,
+          history: [...(prev.history || []), historyItem],
+          updatedAt: new Date().toISOString()
         } : null);
       }
     } catch (error) {
@@ -225,6 +390,9 @@ const TaskBoard = () => {
   };
   const handleEditTask = async (taskId: string, updatedTask: Omit<Task, 'id'>) => {
     try {
+      const originalTask = tasks.find(t => t.id === taskId);
+      if (!originalTask) return;
+
       // Ensure assignee has valid data
       const validatedAssignee = ensureValidAssignee(updatedTask.assignee);
 
@@ -232,11 +400,30 @@ const TaskBoard = () => {
       const taskWithStringDate = {
         ...updatedTask,
         assignee: validatedAssignee,
-        dueDate: updatedTask.dueDate ? new Date(updatedTask.dueDate).toISOString() : undefined
+        dueDate: updatedTask.dueDate ? new Date(updatedTask.dueDate).toISOString() : undefined,
+        updatedAt: new Date().toISOString()
       };
 
+      // Create history item for this action
+      const historyItem: TaskHistoryItem = {
+        id: Date.now().toString(),
+        action: 'task_edited',
+        timestamp: new Date().toISOString(),
+        user: {
+          name: user?.name || 'Anonymous',
+          avatar: user?.photoURL || user?.avatar || ''
+        },
+        details: 'Task details were edited'
+      };
+
+      // Get existing history or initialize empty array
+      const existingHistory = originalTask.history || [];
+
       // Update task in Firebase
-      await updateData('tasks', taskId, taskWithStringDate);
+      await updateData('tasks', taskId, {
+        ...taskWithStringDate,
+        history: [...existingHistory, historyItem]
+      });
 
       setEditingTask(null);
 
@@ -295,6 +482,73 @@ const TaskBoard = () => {
       await addNotification({
         title: 'Error',
         message: 'Failed to delete task. Please try again.',
+        type: 'system'
+      });
+    }
+  };
+
+  // Function to add a comment to a task
+  const handleAddComment = async (taskId: string) => {
+    if (!selectedTask || !newComment.trim()) {
+      return;
+    }
+
+    try {
+      const comment: TaskComment = {
+        id: Date.now().toString(),
+        text: newComment.trim(),
+        createdAt: new Date().toISOString(),
+        createdBy: {
+          name: user?.name || 'Anonymous',
+          avatar: user?.photoURL || user?.avatar || ''
+        }
+      };
+
+      // Get existing comments or initialize empty array
+      const existingComments = selectedTask.comments || [];
+
+      // Create history item for this action
+      const historyItem: TaskHistoryItem = {
+        id: Date.now().toString(),
+        action: 'comment_added',
+        timestamp: new Date().toISOString(),
+        user: {
+          name: user?.name || 'Anonymous',
+          avatar: user?.photoURL || user?.avatar || ''
+        },
+        details: 'Added a comment'
+      };
+
+      // Get existing history or initialize empty array
+      const existingHistory = selectedTask.history || [];
+
+      // Update task in Firebase
+      await updateData('tasks', taskId, {
+        comments: [...existingComments, comment],
+        history: [...existingHistory, historyItem],
+        updatedAt: new Date().toISOString()
+      });
+
+      // Update the selected task in state
+      setSelectedTask(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          comments: [...(prev.comments || []), comment],
+          history: [...(prev.history || []), historyItem],
+          updatedAt: new Date().toISOString()
+        };
+      });
+
+      // Clear the comment input
+      setNewComment('');
+
+    } catch (error) {
+      console.error('Error adding comment:', error);
+
+      await addNotification({
+        title: 'Error',
+        message: 'Failed to add comment. Please try again.',
         type: 'system'
       });
     }
@@ -460,8 +714,20 @@ const TaskBoard = () => {
                             <h4 className="text-[#3a3226] font-medium text-base">
                               {task.title}
                             </h4>
-                            <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(task.status)} whitespace-nowrap ml-2`}>
-                              {task.status === 'inProgress' ? 'In Progress' : task.status === 'todo' ? 'To Do' : 'Done'}
+                            <span className={`px-2 py-1 rounded-full text-xs flex items-center ${
+                              task.progress === 0
+                                ? 'bg-[#f5eee8] text-[#7a7067]'
+                                : task.progress === 50
+                                  ? 'bg-[#f0f0e8] text-[#b8b87e]'
+                                  : 'bg-[#e8f3f1] text-[#7eb8ab]'
+                            } whitespace-nowrap ml-2`}>
+                              {task.progress === 0 ? (
+                                <><ListTodoIcon className="h-3 w-3 mr-1" />Not Started</>
+                              ) : task.progress === 50 ? (
+                                <><BarChart3Icon className="h-3 w-3 mr-1" />In Progress</>
+                              ) : (
+                                <><CheckCircleIcon className="h-3 w-3 mr-1" />Completed</>
+                              )}
                             </span>
                           </div>
                           <p className="text-sm text-[#7a7067] mb-4 line-clamp-3 flex-grow">
@@ -519,148 +785,411 @@ const TaskBoard = () => {
         </div>
       )}
       {isAddTaskModalOpen && <TaskForm onClose={() => setIsAddTaskModalOpen(false)} onSubmit={handleAddTask} />}
-      {/* Task Detail Modal - Full screen on mobile, centered on desktop */}
+      {/* Enhanced Task Detail Modal - Full screen on mobile, centered on desktop */}
       {selectedTask && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white w-full h-full md:h-auto md:max-h-[90vh] md:w-auto md:min-w-[480px] md:max-w-[600px] md:rounded-xl overflow-auto">
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn"
+          onClick={(e) => {
+            // Close when clicking outside the modal
+            if (e.target === e.currentTarget) {
+              setSelectedTask(null);
+            }
+          }}
+        >
+          <div
+            className="bg-white w-[95%] h-full md:h-auto md:max-h-[90vh] md:w-auto md:min-w-[600px] md:max-w-[800px] md:rounded-xl shadow-xl animate-scaleIn flex flex-col focus:outline-none"
+            role="dialog"
+            aria-labelledby="task-detail-title"
+            aria-modal="true"
+            tabIndex={0}
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Modal Header with sticky positioning */}
-            <div className="sticky top-0 bg-white p-4 md:p-6 border-b border-[#f5f0e8] flex justify-between items-center z-10">
-              <h2 className="font-['Caveat',_cursive] text-2xl text-[#3a3226]">
+            <div className="sticky top-0 bg-white p-4 md:p-6 border-b border-[#f5f0e8] flex justify-between items-center z-20 shadow-md">
+              <h2
+                id="task-detail-title"
+                className="font-['Caveat',_cursive] text-2xl md:text-3xl text-[#3a3226]"
+              >
                 Task Details
               </h2>
               <button
                 onClick={() => setSelectedTask(null)}
-                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-[#f5f0e8] text-[#7a7067] hover:text-[#3a3226] transition-colors"
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-black/10 hover:bg-black/20 text-[#7a7067] hover:text-[#3a3226] transition-colors focus:outline-none focus:ring-2 focus:ring-[#d4a5a5] focus:ring-offset-2"
                 aria-label="Close task details"
               >
-                <XIcon className="h-6 w-6" />
+                <XIcon className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Task Title Section */}
+            <div className="bg-gradient-to-r from-[#f5f0e8] to-white p-4 md:p-6 border-b border-[#f5f0e8] z-10">
+              <h3 className="text-[#3a3226] font-medium text-xl md:text-2xl">
+                {selectedTask.title}
+              </h3>
+
+              {/* Task Metadata */}
+              <div className="flex flex-wrap gap-2 mt-3 items-center">
+                <span className={`text-sm font-medium ${getPriorityColor(selectedTask.priority)} px-3 py-1.5 bg-white rounded-lg flex items-center`}>
+                  <AlertTriangleIcon className="h-3.5 w-3.5 mr-1.5" />
+                  {selectedTask.priority} Priority
+                </span>
+                <span className={`px-3 py-1.5 rounded-lg text-sm ${getStatusColor(selectedTask.status)} flex items-center`}>
+                  {selectedTask.status === 'todo' ? (
+                    <><ListTodoIcon className="h-3.5 w-3.5 mr-1.5" />To Do</>
+                  ) : selectedTask.status === 'inProgress' ? (
+                    <><BarChart3Icon className="h-3.5 w-3.5 mr-1.5" />In Progress</>
+                  ) : (
+                    <><CheckCircleIcon className="h-3.5 w-3.5 mr-1.5" />Done</>
+                  )}
+                </span>
+                {selectedTask.dueDate && (
+                  <span className="text-sm text-[#7a7067] px-3 py-1.5 bg-white rounded-lg flex items-center">
+                    <CalendarIcon className="h-3.5 w-3.5 mr-1.5" />
+                    Due: {new Date(selectedTask.dueDate).toLocaleDateString()}
+                  </span>
+                )}
+                {selectedTask.createdAt && (
+                  <span className="text-sm text-[#7a7067] px-3 py-1.5 bg-white rounded-lg flex items-center">
+                    <ClockIcon className="h-3.5 w-3.5 mr-1.5" />
+                    Created: {formatDate(selectedTask.createdAt)}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Tab Navigation */}
+            <div className="flex border-b border-[#f5f0e8] z-10">
+              <button
+                className={`flex-1 py-3 px-4 text-center font-medium text-sm focus:outline-none transition-colors ${
+                  activeTaskTab === 'details'
+                    ? 'text-[#d4a5a5] border-b-2 border-[#d4a5a5]'
+                    : 'text-[#7a7067] hover:text-[#3a3226] hover:bg-[#f5f0e8]/30'
+                }`}
+                onClick={() => setActiveTaskTab('details')}
+                aria-selected={activeTaskTab === 'details'}
+                role="tab"
+              >
+                <div className="flex items-center justify-center">
+                  <InfoIcon className="h-4 w-4 mr-2" />
+                  Task Details
+                </div>
+              </button>
+              <button
+                className={`flex-1 py-3 px-4 text-center font-medium text-sm focus:outline-none transition-colors ${
+                  activeTaskTab === 'activity'
+                    ? 'text-[#d4a5a5] border-b-2 border-[#d4a5a5]'
+                    : 'text-[#7a7067] hover:text-[#3a3226] hover:bg-[#f5f0e8]/30'
+                }`}
+                onClick={() => setActiveTaskTab('activity')}
+                aria-selected={activeTaskTab === 'activity'}
+                role="tab"
+              >
+                <div className="flex items-center justify-center">
+                  <MessageSquareIcon className="h-4 w-4 mr-2" />
+                  Activity & Comments
+                </div>
               </button>
             </div>
 
             {/* Modal Content with padding and scrollable area */}
-            <div className="p-4 md:p-6 space-y-6 overflow-y-auto">
-              <div>
-                <h3 className="text-[#3a3226] font-medium text-xl mb-3">
-                  {selectedTask.title}
-                </h3>
-                <p className="text-[#7a7067] text-base">
-                  {selectedTask.description}
-                </p>
-              </div>
+            <div className="flex-grow overflow-y-auto max-h-[60vh]" style={{ WebkitOverflowScrolling: 'touch' }}>
+              {/* Details Tab */}
+              {activeTaskTab === 'details' && (
+                <div className="p-4 md:p-6 space-y-6 animate-fadeIn">
+                  {/* Description Section */}
+                  <div className="bg-[#f5f0e8]/30 rounded-lg p-5 shadow-md hover:shadow-lg transition-shadow">
+                    <h4 className="text-[#3a3226] font-medium text-sm uppercase tracking-wider mb-3 flex items-center">
+                      <InfoIcon className="h-4 w-4 mr-2 text-[#d4a5a5]" />
+                      Description
+                    </h4>
+                    <p className="text-[#3a3226] text-base whitespace-pre-line leading-relaxed">
+                      {selectedTask.description || 'No description provided.'}
+                    </p>
+                  </div>
 
-              {/* Task Metadata */}
-              <div className="flex flex-wrap gap-3 items-center">
-                <span className={`text-sm font-medium ${getPriorityColor(selectedTask.priority)} px-3 py-1.5 bg-[#f5f0e8] rounded-lg`}>
-                  {selectedTask.priority} Priority
-                </span>
-                <span className={`px-3 py-1.5 rounded-lg text-sm ${getStatusColor(selectedTask.status)}`}>
-                  {selectedTask.status === 'inProgress' ? 'In Progress' : selectedTask.status === 'todo' ? 'To Do' : 'Done'}
-                </span>
-                {selectedTask.dueDate && (
-                  <span className="text-sm text-[#7a7067] px-3 py-1.5 bg-[#f5f0e8] rounded-lg">
-                    Due: {new Date(selectedTask.dueDate).toLocaleDateString()}
-                  </span>
-                )}
-              </div>
-
-              {/* Assignee Information */}
-              <div className="flex items-center p-4 bg-[#f5f0e8]/30 rounded-lg">
-                <Avatar
-                  src={selectedTask.assignee.avatar}
-                  alt={selectedTask.assignee.name}
-                  size="lg"
-                  className="mr-4"
-                />
-                <div>
-                  <p className="text-[#3a3226] font-medium">Assigned to</p>
-                  <p className="text-[#7a7067]">{selectedTask.assignee.name}</p>
-                </div>
-              </div>
-
-              {/* Progress Update Section - Only show if user is admin or task assignee */}
-              {canUpdateProgress(selectedTask) && (
-                <div className="space-y-4 border-t border-[#f5f0e8] pt-6">
-                  <div className="flex justify-between items-center">
-                    <label className="text-base text-[#3a3226] font-medium">
-                      Update Progress
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleProgressUpdate(selectedTask.id, (selectedTask.progress || 0) - 5)}
-                        className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-[#f5f0e8] text-[#7a7067]"
-                        aria-label="Decrease progress"
-                      >
-                        <MinusIcon className="h-5 w-5" />
-                      </button>
-                      <span className="text-base text-[#3a3226] font-medium w-16 text-center">
-                        {selectedTask.progress || 0}%
-                      </span>
-                      <button
-                        onClick={() => handleProgressUpdate(selectedTask.id, (selectedTask.progress || 0) + 5)}
-                        className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-[#f5f0e8] text-[#7a7067]"
-                        aria-label="Increase progress"
-                      >
-                        <PlusIcon className="h-5 w-5" />
-                      </button>
+                  {/* Assignee Information */}
+                  <div className="bg-[#f5f0e8]/30 rounded-lg p-5 shadow-md hover:shadow-lg transition-shadow">
+                    <h4 className="text-[#3a3226] font-medium text-sm uppercase tracking-wider mb-3 flex items-center">
+                      <UserIcon className="h-4 w-4 mr-2 text-[#d4a5a5]" />
+                      Assignment
+                    </h4>
+                    <div className="flex items-center p-4 bg-white rounded-lg border border-[#f5f0e8]">
+                      <Avatar
+                        src={selectedTask.assignee.avatar}
+                        alt={selectedTask.assignee.name}
+                        size="lg"
+                        className="mr-4 border-2 border-[#d4a5a5]"
+                      />
+                      <div>
+                        <p className="text-[#3a3226] font-medium">{selectedTask.assignee.name}</p>
+                        <p className="text-[#7a7067] text-sm">Assigned Team Member</p>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Progress Bar */}
-                  <div className="h-3 bg-[#f5f0e8] rounded-full">
-                    <div
-                      className="h-full rounded-full bg-[#d4a5a5] transition-all duration-300"
-                      style={{
-                        width: `${selectedTask.progress || 0}%`
-                      }}
-                    ></div>
-                  </div>
+                  {/* Progress Section */}
+                  <div className="bg-[#f5f0e8]/30 rounded-lg p-5 shadow-md hover:shadow-lg transition-shadow">
+                    <h4 className="text-[#3a3226] font-medium text-sm uppercase tracking-wider mb-3 flex items-center">
+                      <SlidersHorizontal className="h-4 w-4 mr-2 text-[#d4a5a5]" />
+                      Progress
+                    </h4>
 
-                  {/* Quick Progress Buttons */}
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {[0, 25, 50, 75, 100].map(progress => (
-                      <button
-                        key={progress}
-                        onClick={() => handleProgressUpdate(selectedTask.id, progress)}
-                        className={`px-3 py-2 rounded-lg text-sm ${
-                          (selectedTask.progress || 0) === progress
-                            ? 'bg-[#d4a5a5] text-white'
-                            : 'bg-[#f5f0e8] text-[#7a7067] hover:bg-[#f5eee8]'
-                        }`}
-                      >
-                        {progress}%
-                      </button>
-                    ))}
+                    {/* Current Progress State */}
+                    <div className="mb-5">
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="text-sm text-[#7a7067] font-medium">Current Status</span>
+                        <span className={`text-sm font-medium px-3 py-1.5 rounded-full ${
+                          selectedTask.progress === 0
+                            ? 'bg-[#f5eee8] text-[#7a7067]'
+                            : selectedTask.progress === 50
+                              ? 'bg-[#f0f0e8] text-[#b8b87e]'
+                              : 'bg-[#e8f3f1] text-[#7eb8ab]'
+                        }`}>
+                          {getProgressStateLabel(percentageToProgressState(selectedTask.progress || 0))}
+                        </span>
+                      </div>
+
+                      {/* Progress Bar - Visual representation */}
+                      <div className="h-3 bg-white rounded-full overflow-hidden border border-[#f5f0e8] shadow-sm">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ease-in-out ${
+                            selectedTask.progress === 0
+                              ? 'bg-[#7a7067] w-0'
+                              : selectedTask.progress === 50
+                                ? 'bg-[#b8b87e] w-1/2'
+                                : 'bg-[#7eb8ab] w-full'
+                          }`}
+                        ></div>
+                      </div>
+                    </div>
+
+                    {/* Progress Update Controls - Only show if user is admin or task assignee */}
+                    {canUpdateProgress(selectedTask) && (
+                      <div className="mt-5 pt-4 border-t border-[#f5f0e8]/70">
+                        <p className="text-sm text-[#3a3226] font-medium mb-4">Update progress state:</p>
+
+                        {/* Three-State Progress Options */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          {/* Not Started Option */}
+                          <button
+                            onClick={() => handleProgressStateUpdate(selectedTask.id, 'not-started')}
+                            className={`flex flex-col items-center p-4 rounded-lg transition-all duration-200 ${
+                              (selectedTask.progress || 0) === 0
+                                ? 'bg-[#f5eee8] border-2 border-[#7a7067] shadow-md'
+                                : 'bg-white border border-[#f5f0e8] hover:bg-[#f5f0e8]/50 hover:shadow-md'
+                            } focus:outline-none focus:ring-2 focus:ring-[#d4a5a5] focus:ring-offset-1`}
+                            aria-pressed={(selectedTask.progress || 0) === 0}
+                          >
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 ${
+                              (selectedTask.progress || 0) === 0
+                                ? 'bg-[#7a7067] text-white'
+                                : 'bg-[#f5f0e8] text-[#7a7067]'
+                            }`}>
+                              <ListTodoIcon className="h-6 w-6" />
+                            </div>
+                            <span className={`text-sm font-medium ${
+                              (selectedTask.progress || 0) === 0
+                                ? 'text-[#3a3226]'
+                                : 'text-[#7a7067]'
+                            }`}>
+                              Not Started
+                            </span>
+                          </button>
+
+                          {/* In Progress Option */}
+                          <button
+                            onClick={() => handleProgressStateUpdate(selectedTask.id, 'in-progress')}
+                            className={`flex flex-col items-center p-4 rounded-lg transition-all duration-200 ${
+                              (selectedTask.progress || 0) === 50
+                                ? 'bg-[#f0f0e8] border-2 border-[#b8b87e] shadow-md'
+                                : 'bg-white border border-[#f5f0e8] hover:bg-[#f5f0e8]/50 hover:shadow-md'
+                            } focus:outline-none focus:ring-2 focus:ring-[#d4a5a5] focus:ring-offset-1`}
+                            aria-pressed={(selectedTask.progress || 0) === 50}
+                          >
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 ${
+                              (selectedTask.progress || 0) === 50
+                                ? 'bg-[#b8b87e] text-white'
+                                : 'bg-[#f5f0e8] text-[#7a7067]'
+                            }`}>
+                              <BarChart3Icon className="h-6 w-6" />
+                            </div>
+                            <span className={`text-sm font-medium ${
+                              (selectedTask.progress || 0) === 50
+                                ? 'text-[#3a3226]'
+                                : 'text-[#7a7067]'
+                            }`}>
+                              In Progress
+                            </span>
+                          </button>
+
+                          {/* Completed Option */}
+                          <button
+                            onClick={() => handleProgressStateUpdate(selectedTask.id, 'completed')}
+                            className={`flex flex-col items-center p-4 rounded-lg transition-all duration-200 ${
+                              (selectedTask.progress || 0) === 100
+                                ? 'bg-[#e8f3f1] border-2 border-[#7eb8ab] shadow-md'
+                                : 'bg-white border border-[#f5f0e8] hover:bg-[#f5f0e8]/50 hover:shadow-md'
+                            } focus:outline-none focus:ring-2 focus:ring-[#d4a5a5] focus:ring-offset-1`}
+                            aria-pressed={(selectedTask.progress || 0) === 100}
+                          >
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 ${
+                              (selectedTask.progress || 0) === 100
+                                ? 'bg-[#7eb8ab] text-white'
+                                : 'bg-[#f5f0e8] text-[#7a7067]'
+                            }`}>
+                              <CheckCircleIcon className="h-6 w-6" />
+                            </div>
+                            <span className={`text-sm font-medium ${
+                              (selectedTask.progress || 0) === 100
+                                ? 'text-[#3a3226]'
+                                : 'text-[#7a7067]'
+                            }`}>
+                              Completed
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
 
-              {/* Show read-only progress if user can't update */}
-              {!canUpdateProgress(selectedTask) && (
-                <div className="space-y-3 border-t border-[#f5f0e8] pt-6">
-                  <div className="flex justify-between items-center">
-                    <label className="text-base text-[#3a3226] font-medium">
-                      Current Progress
-                    </label>
-                    <span className="text-base text-[#3a3226] font-medium">
-                      {selectedTask.progress || 0}%
-                    </span>
+              {/* Activity Tab */}
+              {activeTaskTab === 'activity' && (
+                <div className="p-4 md:p-6 space-y-6 animate-fadeIn">
+                  {/* Comments Section */}
+                  <div className="bg-[#f5f0e8]/30 rounded-lg p-5 shadow-md hover:shadow-lg transition-shadow">
+                    <h4 className="text-[#3a3226] font-medium text-sm uppercase tracking-wider mb-4 flex items-center">
+                      <MessageSquareIcon className="h-4 w-4 mr-2 text-[#d4a5a5]" />
+                      Comments
+                    </h4>
+
+                    {/* Comment List */}
+                    <div className="space-y-4 mb-5">
+                      {selectedTask.comments && selectedTask.comments.length > 0 ? (
+                        selectedTask.comments.map(comment => (
+                          <div key={comment.id} className="flex gap-3 p-4 bg-white rounded-lg border border-[#f5f0e8] shadow-sm">
+                            <Avatar
+                              src={comment.createdBy.avatar}
+                              alt={comment.createdBy.name}
+                              size="sm"
+                              className="flex-shrink-0 border-2 border-[#d4a5a5]"
+                              fallbackBgColor="primary"
+                              debug={false}
+                            />
+                            <div className="flex-1">
+                              <div className="flex justify-between items-start">
+                                <p className="text-[#3a3226] font-medium text-sm">
+                                  {comment.createdBy.name}
+                                </p>
+                                <span className="text-xs text-[#7a7067] bg-[#f5f0e8]/50 px-2 py-1 rounded-full">
+                                  {formatDate(comment.createdAt)}
+                                </span>
+                              </div>
+                              <p className="text-[#3a3226] text-sm mt-2 leading-relaxed">
+                                {comment.text}
+                              </p>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-8 text-[#7a7067] bg-white rounded-lg border border-[#f5f0e8]">
+                          <MessageSquareIcon className="h-10 w-10 mx-auto mb-3 text-[#f5f0e8]" />
+                          <p>No comments yet. Be the first to comment!</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Add Comment Form */}
+                    <div className="mt-5 pt-4 border-t border-[#f5f0e8]/70">
+                      <div className="flex gap-3">
+                        <Avatar
+                          src={user?.photoURL || user?.avatar || ''}
+                          alt={user?.name || 'You'}
+                          size="sm"
+                          className="flex-shrink-0 border-2 border-[#d4a5a5]"
+                          fallbackBgColor="primary"
+                        />
+                        <div className="flex-1 relative">
+                          <textarea
+                            value={newComment}
+                            onChange={(e) => setNewComment(e.target.value)}
+                            placeholder="Add a comment..."
+                            className="w-full px-4 py-3 bg-white text-[#3a3226] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d4a5a5] border border-[#f5f0e8] focus:border-[#d4a5a5] min-h-[100px] resize-none shadow-sm"
+                          />
+                          <button
+                            onClick={() => handleAddComment(selectedTask.id)}
+                            disabled={!newComment.trim()}
+                            className="absolute bottom-3 right-3 p-2 rounded-full bg-[#d4a5a5] text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#c99595] transition-colors focus:outline-none focus:ring-2 focus:ring-[#d4a5a5] focus:ring-offset-1 shadow-sm"
+                            aria-label="Send comment"
+                          >
+                            <SendIcon className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="h-3 bg-[#f5f0e8] rounded-full">
-                    <div
-                      className="h-full rounded-full bg-[#d4a5a5] transition-all duration-300"
-                      style={{
-                        width: `${selectedTask.progress || 0}%`
-                      }}
-                    ></div>
+
+                  {/* Task History Section */}
+                  <div className="bg-[#f5f0e8]/30 rounded-lg p-5 shadow-md hover:shadow-lg transition-shadow">
+                    <h4 className="text-[#3a3226] font-medium text-sm uppercase tracking-wider mb-4 flex items-center">
+                      <ClockIcon className="h-4 w-4 mr-2 text-[#d4a5a5]" />
+                      Task History
+                    </h4>
+
+                    {/* History Timeline */}
+                    <div className="space-y-4 relative pl-6 before:content-[''] before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#f5f0e8]">
+                      {selectedTask.history && selectedTask.history.length > 0 ? (
+                        selectedTask.history.map(item => (
+                          <div key={item.id} className="relative">
+                            <div className="absolute left-[-24px] top-1">
+                              <Avatar
+                                src={item.user.avatar}
+                                alt={item.user.name}
+                                size="xs"
+                                fallbackBgColor="primary"
+                                className="border-2 border-[#d4a5a5]"
+                              />
+                            </div>
+                            <div className="flex justify-between items-start bg-white p-3 rounded-lg border border-[#f5f0e8] shadow-sm">
+                              <div>
+                                <p className="text-[#3a3226] text-sm font-medium">
+                                  {item.action === 'task_created' && 'Task Created'}
+                                  {item.action === 'task_edited' && 'Task Edited'}
+                                  {item.action === 'progress_updated' && 'Progress Updated'}
+                                  {item.action === 'comment_added' && 'Comment Added'}
+                                </p>
+                                <p className="text-[#7a7067] text-xs mt-1">
+                                  by {item.user.name}
+                                </p>
+                              </div>
+                              <span className="text-xs text-[#7a7067] bg-[#f5f0e8]/50 px-2 py-1 rounded-full">
+                                {formatDate(item.timestamp)}
+                              </span>
+                            </div>
+                            {item.details && (
+                              <p className="text-[#7a7067] text-sm mt-1 ml-2 pl-2 border-l-2 border-[#f5f0e8]">
+                                {item.details}
+                              </p>
+                            )}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-8 text-[#7a7067] bg-white rounded-lg border border-[#f5f0e8]">
+                          <ClockIcon className="h-10 w-10 mx-auto mb-3 text-[#f5f0e8]" />
+                          <p>No history available for this task.</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
             </div>
 
             {/* Modal Footer with sticky positioning */}
-            <div className="sticky bottom-0 bg-white p-4 md:p-6 border-t border-[#f5f0e8] flex flex-col sm:flex-row gap-3 sm:justify-end">
+            <div className="sticky bottom-0 bg-white p-4 md:p-6 border-t border-[#f5f0e8] flex flex-col sm:flex-row gap-3 sm:justify-end shadow-md z-20 mt-auto">
               <button
-                className="px-4 py-3 text-[#7a7067] bg-[#f5f0e8] rounded-lg w-full sm:w-auto order-3 sm:order-1"
+                className="px-4 py-3 text-[#7a7067] bg-[#f5f0e8] rounded-lg w-full sm:w-auto order-3 sm:order-1 hover:bg-[#ebe6de] transition-colors focus:outline-none focus:ring-2 focus:ring-[#d4a5a5] focus:ring-offset-1 font-medium shadow-sm"
                 onClick={() => setSelectedTask(null)}
               >
                 Close
@@ -669,20 +1198,26 @@ const TaskBoard = () => {
               {isAdmin() && (
                 <>
                   <button
-                    className="px-4 py-3 bg-[#f5eee8] text-[#d4a5a5] border border-[#d4a5a5] rounded-lg w-full sm:w-auto order-2 sm:order-2 hover:bg-[#f5e5e5] transition-colors"
+                    className="px-4 py-3 bg-[#f5eee8] text-[#d4a5a5] border border-[#d4a5a5] rounded-lg w-full sm:w-auto order-2 sm:order-2 hover:bg-[#f5e5e5] transition-colors focus:outline-none focus:ring-2 focus:ring-[#d4a5a5] focus:ring-offset-1 shadow-sm"
                     onClick={() => confirmDeleteTask(selectedTask.id, selectedTask.title)}
                   >
-                    Delete Task
+                    <div className="flex items-center justify-center">
+                      <Trash2Icon className="h-4 w-4 mr-2" />
+                      Delete Task
+                    </div>
                   </button>
 
                   <button
-                    className="px-4 py-3 bg-[#d4a5a5] text-white rounded-lg w-full sm:w-auto order-1 sm:order-3"
+                    className="px-4 py-3 bg-[#d4a5a5] text-white rounded-lg w-full sm:w-auto order-1 sm:order-3 hover:bg-[#c99595] transition-colors focus:outline-none focus:ring-2 focus:ring-[#d4a5a5] focus:ring-offset-1 font-medium shadow-sm"
                     onClick={() => {
                       setEditingTask(selectedTask);
                       setSelectedTask(null);
                     }}
                   >
-                    Edit Task
+                    <div className="flex items-center justify-center">
+                      <EditIcon className="h-4 w-4 mr-2" />
+                      Edit Task
+                    </div>
                   </button>
                 </>
               )}
@@ -695,23 +1230,32 @@ const TaskBoard = () => {
 
       {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && taskToDelete && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl w-full max-w-md p-6 shadow-lg">
-            <div className="flex items-start mb-4">
-              <div className="bg-[#f5eee8] p-3 rounded-full mr-4">
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50"
+          onClick={(e) => {
+            // Close when clicking outside the modal
+            if (e.target === e.currentTarget) {
+              setIsDeleteModalOpen(false);
+              setTaskToDelete(null);
+            }
+          }}
+        >
+          <div className="bg-white rounded-xl w-[95%] sm:w-auto sm:min-w-[400px] max-w-[500px] p-6 shadow-xl animate-scaleIn">
+            <div className="flex items-start mb-5">
+              <div className="bg-[#f5eee8] p-3 rounded-full mr-4 shadow-sm">
                 <AlertTriangleIcon className="h-6 w-6 text-[#d4a5a5]" />
               </div>
               <div>
-                <h2 className="text-xl text-[#3a3226] font-medium mb-2">Confirm Delete</h2>
-                <p className="text-[#7a7067]">
-                  Are you sure you want to delete <span className="font-medium">"{taskToDelete.title}"</span>? This action cannot be undone.
+                <h2 className="text-xl text-[#3a3226] font-medium mb-3">Confirm Delete</h2>
+                <p className="text-[#7a7067] leading-relaxed">
+                  Are you sure you want to delete <span className="font-medium text-[#3a3226]">"{taskToDelete.title}"</span>? This action cannot be undone.
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3 sm:justify-end mt-6">
+            <div className="flex flex-col sm:flex-row gap-3 sm:justify-end mt-6 pt-4 border-t border-[#f5f0e8]">
               <button
-                className="px-4 py-3 text-[#7a7067] bg-[#f5f0e8] rounded-lg w-full sm:w-auto order-2 sm:order-1 hover:bg-[#ebe6de] transition-colors"
+                className="px-4 py-3 text-[#7a7067] bg-[#f5f0e8] rounded-lg w-full sm:w-auto order-2 sm:order-1 hover:bg-[#ebe6de] transition-colors font-medium shadow-sm"
                 onClick={() => {
                   setIsDeleteModalOpen(false);
                   setTaskToDelete(null);
@@ -720,7 +1264,7 @@ const TaskBoard = () => {
                 Cancel
               </button>
               <button
-                className="px-4 py-3 bg-[#d4a5a5] text-white rounded-lg w-full sm:w-auto order-1 sm:order-2 hover:bg-[#c99595] transition-colors"
+                className="px-6 py-3 bg-[#d4a5a5] text-white rounded-lg w-full sm:w-auto order-1 sm:order-2 hover:bg-[#c99595] transition-colors font-medium shadow-sm"
                 onClick={handleDeleteTask}
               >
                 Delete Task

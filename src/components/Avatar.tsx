@@ -7,6 +7,7 @@ interface AvatarProps {
   size?: 'xs' | 'sm' | 'md' | 'lg';
   className?: string;
   fallbackBgColor?: 'default' | 'primary' | 'secondary' | 'tertiary';
+  debug?: boolean; // Enable debug mode to log avatar loading issues
 }
 
 const Avatar: React.FC<AvatarProps> = ({
@@ -14,16 +15,37 @@ const Avatar: React.FC<AvatarProps> = ({
   alt = 'User',
   size = 'md',
   className = '',
-  fallbackBgColor = 'default'
+  fallbackBgColor = 'default',
+  debug = false
 }) => {
   const [imageError, setImageError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [processedSrc, setProcessedSrc] = useState<string | undefined>(src);
 
-  // Reset error state if src changes
+  // Process the source URL to handle Google profile pictures correctly
   useEffect(() => {
+    if (!src) {
+      setProcessedSrc(undefined);
+      if (debug) console.log(`Avatar for ${alt}: No source URL provided`);
+      return;
+    }
+
+    if (debug) console.log(`Avatar for ${alt}: Original src: ${src}`);
+
+    // Handle Google profile pictures that might have size restrictions
+    if (src.includes('googleusercontent.com')) {
+      // Remove any size restrictions and ensure we get the full-size image
+      const googleSrc = src.replace(/=s\d+-c/, '=s256-c');
+      setProcessedSrc(googleSrc);
+      if (debug) console.log(`Avatar for ${alt}: Processed Google src: ${googleSrc}`);
+    } else {
+      setProcessedSrc(src);
+    }
+
+    // Reset error state when src changes
     setImageError(false);
     setIsLoading(true);
-  }, [src]);
+  }, [src, alt, debug]);
 
   // Size mapping
   const sizeClasses = {
@@ -34,11 +56,13 @@ const Avatar: React.FC<AvatarProps> = ({
   };
 
   const handleImageError = () => {
+    if (debug) console.log(`Avatar image error for ${alt}: ${processedSrc}`);
     setImageError(true);
     setIsLoading(false);
   };
 
   const handleImageLoad = () => {
+    if (debug) console.log(`Avatar image loaded successfully for ${alt}: ${processedSrc}`);
     setIsLoading(false);
   };
 
@@ -83,7 +107,7 @@ const Avatar: React.FC<AvatarProps> = ({
   };
 
   // If image fails to load or src is undefined, show fallback
-  if (imageError || !src) {
+  if (imageError || !processedSrc) {
     const initials = getInitials();
     const bgColorClass = getBgColorClass();
     const textColorClass = getTextColorClass();
@@ -115,7 +139,7 @@ const Avatar: React.FC<AvatarProps> = ({
         </div>
       )}
       <img
-        src={src}
+        src={processedSrc}
         alt={alt || 'User'}
         className="w-full h-full object-cover"
         onError={handleImageError}

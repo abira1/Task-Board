@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { XIcon, Loader2Icon, AlertCircleIcon, UserIcon } from 'lucide-react';
 import { fetchData } from '../firebase/database';
 import Avatar from './Avatar';
+import { useAuth } from '../contexts/AuthContext';
 
 // Define Task interface
 interface Task {
@@ -57,6 +58,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
   const [status, setStatus] = useState<'todo' | 'inProgress' | 'done'>(initialTask?.status || initialStatus);
   const [dueDate, setDueDate] = useState(initialTask?.dueDate ? new Date(initialTask.dueDate).toISOString().split('T')[0] : '');
   const [assignee, setAssignee] = useState(initialTask?.assignee.name || '');
+  const { user, isAdmin } = useAuth();
 
   // State for team members
   const [teamMembers, setTeamMembers] = useState<User[]>([]);
@@ -73,8 +75,17 @@ const TaskForm: React.FC<TaskFormProps> = ({
     const unsubscribe = fetchData<User[]>('users', (data) => {
       try {
         if (data) {
-          // Filter to only include approved users
-          const approvedUsers = data.filter(user => user.approvalStatus === 'approved');
+          // Filter to include all approved users, including admins
+          // Make sure to include all admin users regardless of approval status
+          const approvedUsers = data.filter(user =>
+            user.approvalStatus === 'approved' || user.role === 'admin'
+          );
+
+          // Log the users to help with debugging
+          console.log('All users:', data);
+          console.log('Approved users:', approvedUsers);
+          console.log('Admin users:', approvedUsers.filter(user => user.role === 'admin'));
+          console.log('Current user:', user?.name, user?.role, user?.approvalStatus);
 
           if (approvedUsers.length === 0) {
             setTeamMemberError('No approved team members found. Please contact your administrator.');
@@ -145,9 +156,9 @@ const TaskForm: React.FC<TaskFormProps> = ({
   };
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white w-full h-full md:h-auto md:max-h-[90vh] md:w-auto md:min-w-[480px] md:max-w-[850px] md:rounded-xl overflow-auto">
+      <div className="bg-white w-full h-full md:h-auto md:max-h-[90vh] md:w-auto md:min-w-[480px] md:max-w-[850px] md:rounded-xl flex flex-col">
         {/* Modal Header with sticky positioning */}
-        <div className="sticky top-0 bg-white p-4 md:p-6 border-b border-[#f5f0e8] flex justify-between items-center z-10">
+        <div className="sticky top-0 bg-white p-4 md:p-6 border-b border-[#f5f0e8] flex justify-between items-center z-20 shadow-sm">
           <h2 className="font-['Caveat',_cursive] text-2xl text-[#3a3226]">
             {initialTask ? 'Edit Task' : 'Add New Task'}
           </h2>
@@ -161,8 +172,9 @@ const TaskForm: React.FC<TaskFormProps> = ({
         </div>
 
         {/* Form Content */}
-        <div className="p-4 md:p-6">
-          <form onSubmit={handleSubmit}>
+        <div className="flex-grow overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div className="p-4 md:p-6">
+            <form onSubmit={handleSubmit}>
             {/* Desktop Layout - Two Column Structure */}
             <div className="md:flex md:gap-8">
               {/* Left Column - Main Task Information */}
@@ -286,7 +298,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
                               <option value="">Select assignee</option>
                               {teamMembers.map(member => (
                                 <option key={member.id} value={member.name}>
-                                  {member.name}
+                                  {member.name} {member.role === 'admin' ? '(Admin)' : ''}
                                 </option>
                               ))}
                             </select>
@@ -303,8 +315,18 @@ const TaskForm: React.FC<TaskFormProps> = ({
                               />
                               <div>
                                 <p className="text-[#3a3226] font-medium">{selectedMember.name}</p>
-                                <p className="text-xs text-[#7a7067] capitalize">
-                                  {selectedMember.role.replace('_', ' ')}
+                                <p className="text-xs text-[#7a7067] capitalize flex items-center">
+                                  {selectedMember.role === 'admin' ? (
+                                    <>
+                                      <span className="inline-block w-2 h-2 rounded-full bg-[#d4a5a5] mr-1"></span>
+                                      Administrator
+                                    </>
+                                  ) : (
+                                    <>
+                                      <span className="inline-block w-2 h-2 rounded-full bg-[#7a7067] mr-1"></span>
+                                      Team Member
+                                    </>
+                                  )}
                                 </p>
                               </div>
                             </div>
@@ -442,7 +464,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
                         <option value="">Select assignee</option>
                         {teamMembers.map(member => (
                           <option key={member.id} value={member.name}>
-                            {member.name}
+                            {member.name} {member.role === 'admin' ? '(Admin)' : ''}
                           </option>
                         ))}
                       </select>
@@ -459,8 +481,18 @@ const TaskForm: React.FC<TaskFormProps> = ({
                         />
                         <div>
                           <p className="text-[#3a3226] font-medium">{selectedMember.name}</p>
-                          <p className="text-xs text-[#7a7067] capitalize">
-                            {selectedMember.role.replace('_', ' ')}
+                          <p className="text-xs text-[#7a7067] capitalize flex items-center">
+                            {selectedMember.role === 'admin' ? (
+                              <>
+                                <span className="inline-block w-2 h-2 rounded-full bg-[#d4a5a5] mr-1"></span>
+                                Administrator
+                              </>
+                            ) : (
+                              <>
+                                <span className="inline-block w-2 h-2 rounded-full bg-[#7a7067] mr-1"></span>
+                                Team Member
+                              </>
+                            )}
                           </p>
                         </div>
                       </div>
@@ -471,7 +503,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
             </div>
 
             {/* Form Footer with sticky positioning */}
-            <div className="sticky bottom-0 bg-white pt-5 pb-2 border-t border-[#f5f0e8] flex flex-col sm:flex-row gap-3 sm:justify-end mt-6">
+            <div className="sticky bottom-0 bg-white pt-5 pb-2 border-t border-[#f5f0e8] flex flex-col sm:flex-row gap-3 sm:justify-end mt-6 z-20 shadow-md">
               <button
                 type="button"
                 onClick={onClose}
@@ -487,6 +519,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
               </button>
             </div>
           </form>
+          </div>
         </div>
       </div>
     </div>

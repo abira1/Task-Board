@@ -1,31 +1,39 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   CheckIcon,
   TrashIcon,
   Loader2Icon,
   BellIcon,
   CheckCircleIcon,
-  ClockIcon,
   CalendarIcon,
   UsersIcon,
   AlertCircleIcon,
-  FilterIcon,
-  XCircleIcon
+  VolumeXIcon,
+  Volume2Icon,
+  EyeIcon,
+  EyeOffIcon
 } from 'lucide-react';
 import { useNotifications } from '../contexts/NotificationContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const NotificationsPage = () => {
+  const { user } = useAuth();
   const {
     notifications,
-    markAsRead,
-    markAllAsRead,
+    markAsSeen,
+    markAllAsSeen,
     clearNotification,
-    unreadCount,
-    loading
+    unseenCount,
+    loading,
+    notificationSettings,
+    updateNotificationSettings,
+    toggleSound
   } = useNotifications();
 
   const [filter, setFilter] = useState<string>('all');
-  const [showUnreadOnly, setShowUnreadOnly] = useState<boolean>(false);
+  const [showUnseenOnly, setShowUnseenOnly] = useState<boolean>(false);
+  const [showVolumeSlider, setShowVolumeSlider] = useState<boolean>(false);
+  const volumeSliderRef = useRef<HTMLDivElement>(null);
 
   // Format timestamp in a more human-readable way
   const formatTimestamp = (timestamp: string) => {
@@ -70,25 +78,46 @@ const NotificationsPage = () => {
       return false;
     }
 
-    // Filter by read status
-    if (showUnreadOnly && notification.read) {
+    // Filter by seen status
+    if (showUnseenOnly && user && notification.seenBy && notification.seenBy[user.id]) {
       return false;
     }
 
     return true;
   });
 
-  // Auto-mark notifications as read when they're viewed
+  // Handle click outside for volume slider
   useEffect(() => {
-    const markVisibleAsRead = async () => {
-      if (loading || showUnreadOnly) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        volumeSliderRef.current &&
+        !volumeSliderRef.current.contains(event.target as Node)
+      ) {
+        setShowVolumeSlider(false);
+      }
+    };
 
-      // Wait a bit before marking as read to ensure the user has seen them
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Auto-mark notifications as seen when they're viewed
+  useEffect(() => {
+    const markVisibleAsSeen = async () => {
+      if (loading || showUnseenOnly) return;
+
+      // Wait a bit before marking as seen to ensure the user has seen them
       const timer = setTimeout(async () => {
-        const unreadNotifications = notifications.filter(n => !n.read);
-        if (unreadNotifications.length > 0) {
-          for (const notification of unreadNotifications) {
-            await markAsRead(notification.id);
+        const unseenNotifications = notifications.filter(notification => {
+          // Check if the notification is unseen by the current user
+          return user && (!notification.seenBy || !notification.seenBy[user.id]);
+        });
+
+        if (unseenNotifications.length > 0) {
+          for (const notification of unseenNotifications) {
+            await markAsSeen(notification.id);
           }
         }
       }, 3000);
@@ -96,8 +125,8 @@ const NotificationsPage = () => {
       return () => clearTimeout(timer);
     };
 
-    markVisibleAsRead();
-  }, [loading, notifications, markAsRead, showUnreadOnly]);
+    markVisibleAsSeen();
+  }, [loading, notifications, markAsSeen, showUnseenOnly, user]);
 
   const getTypeColor = (type: string) => {
     switch (type) {
@@ -198,35 +227,95 @@ const NotificationsPage = () => {
           </button>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          {/* Sound toggle button */}
+          <div className="relative">
+            <button
+              onClick={() => setShowVolumeSlider(!showVolumeSlider)}
+              className="px-3 py-1.5 text-sm bg-white text-[#7a7067] hover:bg-[#f5f0e8] rounded-lg transition-colors flex items-center"
+              title={notificationSettings.soundEnabled ? "Sound enabled" : "Sound disabled"}
+            >
+              {notificationSettings.soundEnabled ? (
+                <>
+                  <Volume2Icon className="h-4 w-4 mr-1" />
+                  Sound
+                </>
+              ) : (
+                <>
+                  <VolumeXIcon className="h-4 w-4 mr-1" />
+                  Sound
+                </>
+              )}
+            </button>
+
+            {/* Volume slider popup */}
+            {showVolumeSlider && (
+              <div
+                ref={volumeSliderRef}
+                className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg p-4 z-10 w-64 border border-[#f5f0e8]"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-[#3a3226] font-medium">Notification Sound</span>
+                  <button
+                    onClick={toggleSound}
+                    className="text-[#7a7067] hover:text-[#3a3226]"
+                  >
+                    {notificationSettings.soundEnabled ? (
+                      <Volume2Icon className="h-5 w-5" />
+                    ) : (
+                      <VolumeXIcon className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <VolumeXIcon className="h-4 w-4 text-[#7a7067]" />
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={notificationSettings.volume}
+                    onChange={(e) => updateNotificationSettings({ volume: parseFloat(e.target.value) })}
+                    className="w-full accent-[#d4a5a5]"
+                    disabled={!notificationSettings.soundEnabled}
+                  />
+                  <Volume2Icon className="h-4 w-4 text-[#7a7067]" />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Unread filter button */}
           <button
-            onClick={() => setShowUnreadOnly(!showUnreadOnly)}
+            onClick={() => setShowUnseenOnly(!showUnseenOnly)}
             className={`px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center ${
-              showUnreadOnly
+              showUnseenOnly
                 ? 'bg-[#d4a5a5] text-white'
                 : 'bg-white text-[#7a7067] hover:bg-[#f5f0e8]'
             }`}
           >
-            {showUnreadOnly ? (
+            {showUnseenOnly ? (
               <>
-                <XCircleIcon className="h-4 w-4 mr-1" />
+                <EyeIcon className="h-4 w-4 mr-1" />
                 Show All
               </>
             ) : (
               <>
-                <FilterIcon className="h-4 w-4 mr-1" />
-                Unread Only
+                <EyeOffIcon className="h-4 w-4 mr-1" />
+                Unseen Only
               </>
             )}
           </button>
 
-          {unreadCount > 0 && (
+          {/* Mark all as read button */}
+          {unseenCount > 0 && (
             <button
-              onClick={() => markAllAsRead()}
+              onClick={() => markAllAsSeen()}
               className="px-3 py-1.5 text-sm bg-white text-[#d4a5a5] hover:text-[#c99090] hover:bg-[#f5f0e8] rounded-lg transition-colors flex items-center"
             >
               <CheckIcon className="h-4 w-4 mr-1" />
-              Mark all read
+              Mark all as seen
             </button>
           )}
         </div>
@@ -246,8 +335,8 @@ const NotificationsPage = () => {
             <p className="text-sm mt-2">
               {filter !== 'all'
                 ? `You don't have any ${filter} notifications`
-                : showUnreadOnly
-                  ? "You don't have any unread notifications"
+                : showUnseenOnly
+                  ? "You don't have any unseen notifications"
                   : "You're all caught up!"}
             </p>
           </div>
@@ -256,7 +345,11 @@ const NotificationsPage = () => {
             {filteredNotifications.map(notification => (
               <div
                 key={notification.id}
-                className={`p-5 hover:bg-[#f5f0e8]/30 transition-colors ${!notification.read ? 'bg-[#f5f0e8]/10' : ''}`}
+                className={`p-5 hover:bg-[#f5f0e8]/30 transition-colors ${
+                  user && (!notification.seenBy || !notification.seenBy[user.id])
+                    ? 'bg-[#f5f0e8]/20 border-l-4 border-[#d4a5a5]'
+                    : ''
+                }`}
               >
                 <div className="flex justify-between items-start">
                   <div className="flex items-start">
@@ -271,7 +364,7 @@ const NotificationsPage = () => {
                         <span className="text-xs text-[#7a7067] whitespace-nowrap">
                           {formatTimestamp(notification.timestamp)}
                         </span>
-                        {!notification.read && (
+                        {user && (!notification.seenBy || !notification.seenBy[user.id]) && (
                           <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-[#d4a5a5] text-white">
                             New
                           </span>
@@ -283,13 +376,13 @@ const NotificationsPage = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-1 ml-4 shrink-0">
-                    {!notification.read && (
+                    {user && (!notification.seenBy || !notification.seenBy[user.id]) && (
                       <button
-                        onClick={() => markAsRead(notification.id)}
+                        onClick={() => markAsSeen(notification.id)}
                         className="p-2 rounded-full hover:bg-[#f5f0e8] text-[#7a7067] hover:text-[#3a3226]"
-                        title="Mark as read"
+                        title="Mark as seen"
                       >
-                        <CheckIcon className="h-5 w-5" />
+                        <EyeIcon className="h-5 w-5" />
                       </button>
                     )}
                     <button

@@ -216,92 +216,166 @@ const Dashboard = () => {
       .slice(0, 3); // Limit to 3 activities
   }, [notifications]);
 
-  return <div className="space-y-8">
+  return <div className="space-y-6 md:space-y-8">
       <header>
-        <h1 className="font-['Caveat',_cursive] text-4xl text-[#3a3226] mb-2">
+        <h1 className="font-['Caveat',_cursive] text-3xl md:text-4xl text-[#3a3226] mb-2">
           {getGreeting()}, {firstName}!
         </h1>
         <p className="text-[#7a7067]">
           Here's what's happening with your projects today.
         </p>
       </header>
+
       {/* Stats Section */}
-      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {loading.tasks ? (
-          // Loading skeleton for stats
-          <>
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="bg-white rounded-xl p-6 animate-pulse">
+      <section>
+        {/* Mobile Stats Carousel */}
+        <div className="overflow-x-auto pb-4 md:hidden">
+          <div className="flex space-x-4 min-w-max px-1">
+            {loading.tasks ? (
+              // Loading skeleton for mobile stats
+              <>
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="bg-white rounded-xl p-5 w-[200px] animate-pulse">
+                    <div className="flex items-center mb-3">
+                      <div className="w-10 h-10 rounded-full bg-[#f5f0e8] mr-3"></div>
+                      <div className="h-4 bg-[#f5f0e8] rounded w-24"></div>
+                    </div>
+                    <div className="h-8 bg-[#f5f0e8] rounded w-16 mb-2"></div>
+                    <div className="h-3 bg-[#f5f0e8] rounded w-32"></div>
+                  </div>
+                ))}
+              </>
+            ) : (
+              <>
+                <div className="bg-white rounded-xl p-5 w-[200px] shadow-sm">
+                  <div className="flex items-center mb-3">
+                    <div className="w-10 h-10 rounded-full bg-[#e8f3f1] flex items-center justify-center mr-3">
+                      <CheckCircleIcon className="h-5 w-5 text-[#7eb8ab]" />
+                    </div>
+                    <h3 className="text-[#3a3226] font-medium">Completed</h3>
+                  </div>
+                  <p className="text-3xl font-bold text-[#3a3226]">{stats.completed}</p>
+                  <p className="text-[#7a7067] text-sm mt-1">Tasks completed</p>
+                </div>
+
+                <div className="bg-white rounded-xl p-5 w-[200px] shadow-sm">
+                  <div className="flex items-center mb-3">
+                    <div className="w-10 h-10 rounded-full bg-[#f5eee8] flex items-center justify-center mr-3">
+                      <ClockIcon className="h-5 w-5 text-[#d4a5a5]" />
+                    </div>
+                    <h3 className="text-[#3a3226] font-medium">In Progress</h3>
+                  </div>
+                  <p className="text-3xl font-bold text-[#3a3226]">{stats.inProgress}</p>
+                  <p className="text-[#7a7067] text-sm mt-1">Tasks in progress</p>
+                </div>
+
+                <div className="bg-white rounded-xl p-5 w-[200px] shadow-sm">
+                  <div className="flex items-center mb-3">
+                    <div className="w-10 h-10 rounded-full bg-[#e8ecf3] flex items-center justify-center mr-3">
+                      <AlertCircleIcon className="h-5 w-5 text-[#8ca3d8]" />
+                    </div>
+                    <h3 className="text-[#3a3226] font-medium">Upcoming</h3>
+                  </div>
+                  <p className="text-3xl font-bold text-[#3a3226]">{stats.upcoming}</p>
+                  <p className="text-[#7a7067] text-sm mt-1">Tasks due soon</p>
+                </div>
+
+                <div className="bg-white rounded-xl p-5 w-[200px] shadow-sm">
+                  <div className="flex items-center mb-3">
+                    <div className="w-10 h-10 rounded-full bg-[#f0f0e8] flex items-center justify-center mr-3">
+                      <BarChart3Icon className="h-5 w-5 text-[#b8b87e]" />
+                    </div>
+                    <h3 className="text-[#3a3226] font-medium">Productivity</h3>
+                  </div>
+                  <p className="text-3xl font-bold text-[#3a3226]">{stats.productivity}%</p>
+                  <p className="text-[#7a7067] text-sm mt-1">Completion rate</p>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Desktop Stats Grid */}
+        <div className="hidden md:grid grid-cols-2 lg:grid-cols-4 gap-6">
+          {loading.tasks ? (
+            // Loading skeleton for desktop stats
+            <>
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="bg-white rounded-xl p-6 animate-pulse shadow-sm">
+                  <div className="flex items-center mb-4">
+                    <div className="w-10 h-10 rounded-full bg-[#f5f0e8] mr-3"></div>
+                    <div className="h-4 bg-[#f5f0e8] rounded w-24"></div>
+                  </div>
+                  <div className="h-8 bg-[#f5f0e8] rounded w-16 mb-2"></div>
+                  <div className="h-3 bg-[#f5f0e8] rounded w-32"></div>
+                </div>
+              ))}
+            </>
+          ) : (
+            <>
+              <div className="bg-white rounded-xl p-6 shadow-sm">
                 <div className="flex items-center mb-4">
-                  <div className="w-10 h-10 rounded-full bg-[#f5f0e8] mr-3"></div>
-                  <div className="h-4 bg-[#f5f0e8] rounded w-24"></div>
+                  <div className="w-10 h-10 rounded-full bg-[#e8f3f1] flex items-center justify-center mr-3">
+                    <CheckCircleIcon className="h-5 w-5 text-[#7eb8ab]" />
+                  </div>
+                  <h3 className="text-[#3a3226] font-medium">Completed</h3>
                 </div>
-                <div className="h-8 bg-[#f5f0e8] rounded w-16 mb-2"></div>
-                <div className="h-3 bg-[#f5f0e8] rounded w-32"></div>
+                <p className="text-3xl font-bold text-[#3a3226]">{stats.completed}</p>
+                <p className="text-[#7a7067] text-sm mt-1">Tasks completed</p>
               </div>
-            ))}
-          </>
-        ) : (
-          <>
-            <div className="bg-white rounded-xl p-6">
-              <div className="flex items-center mb-4">
-                <div className="w-10 h-10 rounded-full bg-[#e8f3f1] flex items-center justify-center mr-3">
-                  <CheckCircleIcon className="h-5 w-5 text-[#7eb8ab]" />
+
+              <div className="bg-white rounded-xl p-6 shadow-sm">
+                <div className="flex items-center mb-4">
+                  <div className="w-10 h-10 rounded-full bg-[#f5eee8] flex items-center justify-center mr-3">
+                    <ClockIcon className="h-5 w-5 text-[#d4a5a5]" />
+                  </div>
+                  <h3 className="text-[#3a3226] font-medium">In Progress</h3>
                 </div>
-                <h3 className="text-[#3a3226] font-medium">Completed</h3>
+                <p className="text-3xl font-bold text-[#3a3226]">{stats.inProgress}</p>
+                <p className="text-[#7a7067] text-sm mt-1">Tasks in progress</p>
               </div>
-              <p className="text-3xl font-bold text-[#3a3226]">{stats.completed}</p>
-              <p className="text-[#7a7067] text-sm mt-1">Tasks completed</p>
-            </div>
-            <div className="bg-white rounded-xl p-6">
-              <div className="flex items-center mb-4">
-                <div className="w-10 h-10 rounded-full bg-[#f5eee8] flex items-center justify-center mr-3">
-                  <ClockIcon className="h-5 w-5 text-[#d4a5a5]" />
+
+              <div className="bg-white rounded-xl p-6 shadow-sm">
+                <div className="flex items-center mb-4">
+                  <div className="w-10 h-10 rounded-full bg-[#e8ecf3] flex items-center justify-center mr-3">
+                    <AlertCircleIcon className="h-5 w-5 text-[#8ca3d8]" />
+                  </div>
+                  <h3 className="text-[#3a3226] font-medium">Upcoming</h3>
                 </div>
-                <h3 className="text-[#3a3226] font-medium">In Progress</h3>
+                <p className="text-3xl font-bold text-[#3a3226]">{stats.upcoming}</p>
+                <p className="text-[#7a7067] text-sm mt-1">Tasks due soon</p>
               </div>
-              <p className="text-3xl font-bold text-[#3a3226]">{stats.inProgress}</p>
-              <p className="text-[#7a7067] text-sm mt-1">Tasks in progress</p>
-            </div>
-            <div className="bg-white rounded-xl p-6">
-              <div className="flex items-center mb-4">
-                <div className="w-10 h-10 rounded-full bg-[#e8ecf3] flex items-center justify-center mr-3">
-                  <AlertCircleIcon className="h-5 w-5 text-[#8ca3d8]" />
+
+              <div className="bg-white rounded-xl p-6 shadow-sm">
+                <div className="flex items-center mb-4">
+                  <div className="w-10 h-10 rounded-full bg-[#f0f0e8] flex items-center justify-center mr-3">
+                    <BarChart3Icon className="h-5 w-5 text-[#b8b87e]" />
+                  </div>
+                  <h3 className="text-[#3a3226] font-medium">Productivity</h3>
                 </div>
-                <h3 className="text-[#3a3226] font-medium">Upcoming</h3>
+                <p className="text-3xl font-bold text-[#3a3226]">{stats.productivity}%</p>
+                <p className="text-[#7a7067] text-sm mt-1">Completion rate</p>
               </div>
-              <p className="text-3xl font-bold text-[#3a3226]">{stats.upcoming}</p>
-              <p className="text-[#7a7067] text-sm mt-1">Tasks due soon</p>
-            </div>
-            <div className="bg-white rounded-xl p-6">
-              <div className="flex items-center mb-4">
-                <div className="w-10 h-10 rounded-full bg-[#f0f0e8] flex items-center justify-center mr-3">
-                  <BarChart3Icon className="h-5 w-5 text-[#b8b87e]" />
-                </div>
-                <h3 className="text-[#3a3226] font-medium">Productivity</h3>
-              </div>
-              <p className="text-3xl font-bold text-[#3a3226]">{stats.productivity}%</p>
-              <p className="text-[#7a7067] text-sm mt-1">Completion rate</p>
-            </div>
-          </>
-        )}
+            </>
+          )}
+        </div>
       </section>
       {/* Recent Activity */}
       <section>
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="font-['Caveat',_cursive] text-2xl text-[#3a3226]">
+        <div className="flex justify-between items-center mb-4 md:mb-6">
+          <h2 className="font-['Caveat',_cursive] text-xl md:text-2xl text-[#3a3226]">
             Recent Activity
           </h2>
-          <Link to="/notifications" className="text-[#d4a5a5] font-medium">View all</Link>
+          <Link to="/notifications" className="text-[#d4a5a5] font-medium text-sm md:text-base">View all</Link>
         </div>
 
         {recentActivity.length === 0 ? (
           // Empty state
-          <div className="bg-white rounded-xl p-6 text-center">
+          <div className="bg-white rounded-xl p-5 md:p-6 text-center shadow-sm">
             <p className="text-[#7a7067]">No recent activity</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3 md:space-y-4">
             {recentActivity.map(activity => {
               // Determine icon based on notification type
               const getActivityIcon = (type: string) => {
@@ -336,35 +410,38 @@ const Dashboard = () => {
               };
 
               return (
-                <div key={activity.id} className="bg-white rounded-xl p-4 flex items-center">
-                  <div className={`w-10 h-10 rounded-full ${getActivityBg(activity.type)} flex items-center justify-center mr-4`}>
+                <div key={activity.id} className="bg-white rounded-xl p-4 flex items-start md:items-center shadow-sm">
+                  <div className={`w-10 h-10 rounded-full ${getActivityBg(activity.type)} flex items-center justify-center mr-3 md:mr-4 flex-shrink-0`}>
                     {getActivityIcon(activity.type)}
                   </div>
-                  <div className="flex-1">
-                    <p className="text-[#3a3226] font-medium">{activity.title}</p>
-                    <p className="text-[#7a7067] text-sm">{activity.message}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[#3a3226] font-medium text-sm md:text-base truncate">{activity.title}</p>
+                    <p className="text-[#7a7067] text-xs md:text-sm line-clamp-2">{activity.message}</p>
                   </div>
-                  <p className="text-[#7a7067] text-sm">{formatRelativeTime(activity.timestamp)}</p>
+                  <p className="text-[#7a7067] text-xs md:text-sm ml-2 whitespace-nowrap flex-shrink-0">
+                    {formatRelativeTime(activity.timestamp)}
+                  </p>
                 </div>
               );
             })}
           </div>
         )}
       </section>
+
       {/* Today's Tasks */}
       <section>
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="font-['Caveat',_cursive] text-2xl text-[#3a3226]">
+        <div className="flex justify-between items-center mb-4 md:mb-6">
+          <h2 className="font-['Caveat',_cursive] text-xl md:text-2xl text-[#3a3226]">
             Today's Tasks
           </h2>
-          <Link to="/taskboard" className="text-[#d4a5a5] font-medium">View all</Link>
+          <Link to="/taskboard" className="text-[#d4a5a5] font-medium text-sm md:text-base">View all</Link>
         </div>
 
         {loading.tasks ? (
           // Loading skeleton for tasks
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="bg-white rounded-xl p-5 animate-pulse">
+            {[1, 2].map((i) => (
+              <div key={i} className="bg-white rounded-xl p-5 animate-pulse shadow-sm">
                 <div className="h-5 bg-[#f5f0e8] rounded w-3/4 mb-4"></div>
                 <div className="flex items-center mb-4">
                   <div className="h-4 bg-[#f5f0e8] rounded w-24 mr-4"></div>
@@ -383,82 +460,128 @@ const Dashboard = () => {
           </div>
         ) : todaysTasks.length === 0 ? (
           // Empty state
-          <div className="bg-white rounded-xl p-6 text-center">
+          <div className="bg-white rounded-xl p-5 md:p-6 text-center shadow-sm">
             <p className="text-[#7a7067] mb-4">No tasks due today</p>
             <Link
               to="/taskboard"
-              className="inline-block px-4 py-2 bg-[#d4a5a5] text-white rounded-lg"
+              className="inline-block px-4 py-3 bg-[#d4a5a5] text-white rounded-lg"
             >
               View all tasks
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {todaysTasks.map(task => {
-              // Format due date for display
-              const formatDueDate = (dateString?: string) => {
-                if (!dateString) return 'No due date';
+          // Mobile: Horizontal scroll for tasks, Desktop: Grid
+          <>
+            {/* Mobile Task Scroll */}
+            <div className="md:hidden overflow-x-auto pb-4">
+              <div className="flex space-x-4 min-w-max px-1">
+                {todaysTasks.map(task => {
+                  // Format due date for display
+                  const formatDueDate = (dateString?: string) => {
+                    if (!dateString) return 'No due date';
 
-                const date = new Date(dateString);
-                const hours = date.getHours();
-                const minutes = date.getMinutes();
+                    const date = new Date(dateString);
+                    const hours = date.getHours();
+                    const minutes = date.getMinutes();
 
-                // Format time as 12-hour with AM/PM
-                const ampm = hours >= 12 ? 'PM' : 'AM';
-                const formattedHours = hours % 12 || 12; // Convert 0 to 12 for 12 AM
-                const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
+                    // Format time as 12-hour with AM/PM
+                    const ampm = hours >= 12 ? 'PM' : 'AM';
+                    const formattedHours = hours % 12 || 12; // Convert 0 to 12 for 12 AM
+                    const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
 
-                return `Today, ${formattedHours}:${formattedMinutes} ${ampm}`;
-              };
+                    return `Today, ${formattedHours}:${formattedMinutes} ${ampm}`;
+                  };
 
-              return (
-                <div key={task.id} onClick={() => navigate(`/taskboard?task=${task.id}`)}>
-                  <TaskCard
-                    title={task.title}
-                    dueDate={formatDueDate(task.dueDate)}
-                    priority={task.priority}
-                    assignee={task.assignee}
-                    progress={task.progress || 0}
-                  />
-                </div>
-              );
-            })}
-          </div>
+                  return (
+                    <div
+                      key={task.id}
+                      className="w-[280px] flex-shrink-0"
+                      onClick={() => navigate(`/taskboard?task=${task.id}`)}
+                    >
+                      <TaskCard
+                        title={task.title}
+                        dueDate={formatDueDate(task.dueDate)}
+                        priority={task.priority}
+                        assignee={task.assignee}
+                        progress={task.progress || 0}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Desktop Task Grid */}
+            <div className="hidden md:grid grid-cols-2 gap-4">
+              {todaysTasks.map(task => {
+                // Format due date for display
+                const formatDueDate = (dateString?: string) => {
+                  if (!dateString) return 'No due date';
+
+                  const date = new Date(dateString);
+                  const hours = date.getHours();
+                  const minutes = date.getMinutes();
+
+                  // Format time as 12-hour with AM/PM
+                  const ampm = hours >= 12 ? 'PM' : 'AM';
+                  const formattedHours = hours % 12 || 12; // Convert 0 to 12 for 12 AM
+                  const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
+
+                  return `Today, ${formattedHours}:${formattedMinutes} ${ampm}`;
+                };
+
+                return (
+                  <div
+                    key={task.id}
+                    onClick={() => navigate(`/taskboard?task=${task.id}`)}
+                  >
+                    <TaskCard
+                      title={task.title}
+                      dueDate={formatDueDate(task.dueDate)}
+                      priority={task.priority}
+                      assignee={task.assignee}
+                      progress={task.progress || 0}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </section>
       {/* Upcoming Deadlines */}
       <section>
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="font-['Caveat',_cursive] text-2xl text-[#3a3226]">
+        <div className="flex justify-between items-center mb-4 md:mb-6">
+          <h2 className="font-['Caveat',_cursive] text-xl md:text-2xl text-[#3a3226]">
             Upcoming Deadlines
           </h2>
-          <Link to="/calendar" className="text-[#d4a5a5] font-medium">View calendar</Link>
+          <Link to="/calendar" className="text-[#d4a5a5] font-medium text-sm md:text-base">View calendar</Link>
         </div>
 
         {loading.tasks ? (
           // Loading skeleton for deadlines
-          <div className="bg-white rounded-xl overflow-hidden">
-            <div className="p-6 space-y-4">
+          <div className="bg-white rounded-xl overflow-hidden shadow-sm">
+            <div className="p-4 md:p-6 space-y-4">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="flex items-center animate-pulse">
-                  <div className="w-10 h-10 rounded-full bg-[#f5f0e8] mr-4"></div>
-                  <div className="flex-1">
+                  <div className="w-10 h-10 rounded-full bg-[#f5f0e8] mr-3 md:mr-4 flex-shrink-0"></div>
+                  <div className="flex-1 min-w-0">
                     <div className="h-5 bg-[#f5f0e8] rounded w-3/4 mb-2"></div>
                     <div className="h-3 bg-[#f5f0e8] rounded w-1/2"></div>
                   </div>
-                  <div className="h-4 bg-[#f5f0e8] rounded w-12"></div>
+                  <div className="h-4 bg-[#f5f0e8] rounded w-12 ml-2 flex-shrink-0"></div>
                 </div>
               ))}
             </div>
           </div>
         ) : upcomingDeadlines.length === 0 ? (
           // Empty state
-          <div className="bg-white rounded-xl p-6 text-center">
+          <div className="bg-white rounded-xl p-5 md:p-6 text-center shadow-sm">
             <p className="text-[#7a7067]">No upcoming deadlines</p>
           </div>
         ) : (
-          <div className="bg-white rounded-xl overflow-hidden">
-            <div className="p-6 space-y-4">
+          <div className="bg-white rounded-xl overflow-hidden shadow-sm">
+            <div className="p-4 md:p-6 space-y-4">
               {upcomingDeadlines.map(task => {
                 // Determine background color based on priority
                 const getPriorityBg = (priority: string) => {
@@ -490,17 +613,17 @@ const Dashboard = () => {
 
                 return (
                   <div key={task.id} className="flex items-center">
-                    <div className={`w-10 h-10 rounded-full ${getPriorityBg(task.priority)} flex items-center justify-center mr-4`}>
+                    <div className={`w-10 h-10 rounded-full ${getPriorityBg(task.priority)} flex items-center justify-center mr-3 md:mr-4 flex-shrink-0`}>
                       <CalendarIcon className={`h-5 w-5 ${getPriorityColor(task.priority)}`} />
                     </div>
-                    <div className="flex-1">
-                      <p className="text-[#3a3226] font-medium">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[#3a3226] font-medium text-sm md:text-base truncate">
                         {task.title}
                       </p>
-                      <p className="text-[#7a7067] text-sm">{getDaysUntil(task.dueDate)}</p>
+                      <p className="text-[#7a7067] text-xs md:text-sm">{getDaysUntil(task.dueDate)}</p>
                     </div>
                     <button
-                      className="text-[#d4a5a5]"
+                      className="ml-2 px-3 py-1.5 bg-[#f5f0e8] hover:bg-[#f5eee8] text-[#d4a5a5] rounded-lg text-sm flex-shrink-0 transition-colors"
                       onClick={() => navigate(`/taskboard?task=${task.id}`)}
                     >
                       View

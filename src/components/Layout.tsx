@@ -10,7 +10,9 @@ import {
   LogOutIcon,
   BellIcon,
   UserIcon,
-  BuildingIcon
+  BuildingIcon,
+  DownloadIcon,
+  BarChart3Icon
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
@@ -69,6 +71,7 @@ const Layout = () => {
     if (path.includes('/notifications')) return 'Notifications';
     if (path.includes('/leads')) return 'Lead Management';
     if (path.includes('/team')) return 'Team Management';
+    if (path.includes('/progress')) return 'Progress Tracker';
     return 'Toiral Task Board';
   };
 
@@ -194,6 +197,18 @@ const Layout = () => {
                   <span className="text-base">Lead Management</span>
                 </NavLink>
               </li>
+              <li>
+                <NavLink
+                  to="/progress"
+                  className={({isActive}) => `
+                    flex items-center p-4 rounded-lg transition-colors
+                    ${isActive ? 'bg-[#f5f0e8] text-[#3a3226]' : 'hover:bg-[#f5f0e8] text-[#7a7067]'}
+                  `}
+                >
+                  <BarChart3Icon className="h-6 w-6 mr-3" />
+                  <span className="text-base">Progress Tracker</span>
+                </NavLink>
+              </li>
               {isAdmin() && (
                 <li>
                   <NavLink
@@ -229,6 +244,13 @@ const Layout = () => {
                 </div>
               </div>
             </div>
+            <a
+              href="/download"
+              className="flex items-center p-4 rounded-lg text-[#7a7067] hover:bg-[#f5f0e8] transition-colors"
+            >
+              <DownloadIcon className="h-6 w-6 mr-3" />
+              <span className="text-base">Download App</span>
+            </a>
             <NavLink
               to="/"
               onClick={logout}

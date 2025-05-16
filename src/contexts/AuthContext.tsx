@@ -119,11 +119,18 @@ export const AuthProvider: React.FC<{
         // Check if the email is the admin email
         const isAdminEmail = firebaseUser.email === 'abirsabirhossain@gmail.com';
 
+        // Process Google profile picture URL if available
+        let processedPhotoURL = firebaseUser.photoURL || '';
+        if (processedPhotoURL && processedPhotoURL.includes('googleusercontent.com')) {
+          // Remove any size restrictions and ensure we get a larger image
+          processedPhotoURL = processedPhotoURL.replace(/=s\d+-c/, '=s256-c');
+        }
+
         const newUser: Omit<User, 'id'> = {
           name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
           email: firebaseUser.email || '',
           role: isAdminEmail ? 'admin' : 'team_member',
-          avatar: firebaseUser.photoURL || '',
+          avatar: processedPhotoURL,
           providerId: firebaseUser.providerId || 'google.com',
           // Auto-approve admin users, set others to pending
           approvalStatus: isAdminEmail ? 'approved' : 'pending',
@@ -142,15 +149,24 @@ export const AuthProvider: React.FC<{
       } else {
         // Always update the user's avatar with the Google profile picture if available
         if (firebaseUser.photoURL) {
+          // Process Google profile picture URL to ensure we get a proper size
+          let processedPhotoURL = firebaseUser.photoURL;
+
+          // Handle Google profile pictures that might have size restrictions
+          if (processedPhotoURL.includes('googleusercontent.com')) {
+            // Remove any size restrictions and ensure we get a larger image
+            processedPhotoURL = processedPhotoURL.replace(/=s\d+-c/, '=s256-c');
+          }
+
           await updateData('users', userRecord.id, {
             providerId: firebaseUser.providerId || 'google.com',
-            avatar: firebaseUser.photoURL
+            avatar: processedPhotoURL
           });
 
           userRecord.providerId = firebaseUser.providerId || 'google.com';
-          userRecord.avatar = firebaseUser.photoURL;
+          userRecord.avatar = processedPhotoURL;
 
-          console.log('Updated user avatar with Google profile picture:', firebaseUser.photoURL);
+          console.log('Updated user avatar with Google profile picture:', processedPhotoURL);
         } else if (!userRecord.providerId) {
           // Update existing user with provider ID if it's missing
           await updateData('users', userRecord.id, {

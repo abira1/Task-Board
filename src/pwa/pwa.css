@@ -1,0 +1,148 @@
+/* PWA-specific styles */
+
+/* Remove tap highlight on iOS */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Improve touch targets for mobile */
+button,
+a,
+[role="button"],
+input[type="checkbox"],
+input[type="radio"],
+select {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Fix for iOS safe areas */
+@supports (padding: max(0px)) {
+  body {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Prevent pull-to-refresh on iOS */
+html, body {
+  overscroll-behavior-y: none;
+}
+
+/* Animations for PWA notifications */
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.pwa-notification-enter {
+  animation: slideUp 0.3s forwards;
+}
+
+.pwa-notification-exit {
+  animation: slideDown 0.3s forwards;
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s forwards;
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.3s forwards;
+}
+
+/* Offline indicator styles */
+.offline-indicator {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #d4a5a5;
+  color: white;
+  text-align: center;
+  padding: 8px;
+  z-index: 9999;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Install prompt styles */
+.install-prompt {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #f5f0e8;
+  border-top: 1px solid #d4a5a5;
+  padding: 16px;
+  z-index: 9998;
+  animation: slideUp 0.3s forwards;
+}
+
+/* Modal animation styles */
+.modal-overlay {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-content {
+  animation: scaleIn 0.3s ease-out;
+}
+
+/* Standalone mode specific styles */
+@media all and (display-mode: standalone) {
+  /* Hide elements that shouldn't appear in the PWA */
+  .hide-in-pwa {
+    display: none !important;
+  }
+
+  /* Add extra padding for bottom navigation in standalone mode */
+  .pwa-content-area {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 16px);
+  }
+}

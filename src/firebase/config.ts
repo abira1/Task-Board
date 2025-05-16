@@ -4,17 +4,42 @@ import { getAnalytics } from "firebase/analytics";
 import { getAuth } from "firebase/auth";
 import { getDatabase } from "firebase/database";
 
+// Check if required environment variables are set
+const requiredEnvVars = [
+  'VITE_FIREBASE_API_KEY',
+  'VITE_FIREBASE_AUTH_DOMAIN',
+  'VITE_FIREBASE_DATABASE_URL',
+  'VITE_FIREBASE_PROJECT_ID',
+  'VITE_FIREBASE_STORAGE_BUCKET',
+  'VITE_FIREBASE_MESSAGING_SENDER_ID',
+  'VITE_FIREBASE_APP_ID'
+];
+
+// In development, warn about missing environment variables
+if (import.meta.env.DEV) {
+  const missingVars = requiredEnvVars.filter(
+    varName => !import.meta.env[varName]
+  );
+
+  if (missingVars.length > 0) {
+    console.warn(
+      `⚠️ Missing required Firebase environment variables: ${missingVars.join(', ')}\n` +
+      `Please check your .env file and make sure all required variables are set.`
+    );
+  }
+}
+
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyDeiI4iRtnUzhjCAYcAgVNWIspfpwbjOPQ",
-  authDomain: "toiral-taskboard.firebaseapp.com",
-  databaseURL: "https://toiral-taskboard-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "toiral-taskboard",
-  storageBucket: "toiral-taskboard.firebasestorage.app",
-  messagingSenderId: "878220954929",
-  appId: "1:878220954929:web:0276e1faad822667e67410",
-  measurementId: "G-W7WX1NPDD9"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase

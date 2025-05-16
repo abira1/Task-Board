@@ -3,11 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="https://i.postimg.cc/MpyY0sQY/Profile-picture-8-removebg-preview.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#f5f0e8" />
+    <meta name="description" content="Task management application for Toiral" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Toiral Tasks" />
+    <link rel="apple-touch-icon" href="/pwa-icons/apple-touch-icon.png" />
     <title>Toiral Task Board</title>
   </head>
   <body>
     <div id="root"></div>
+    <div id="offline-message" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background-color: #d4a5a5; color: white; text-align: center; padding: 8px; z-index: 9999;">
+      You are currently offline. Some features may be limited.
+    </div>
     <script type="module" src="/src/index.tsx"></script>
   </body>
 </html>
