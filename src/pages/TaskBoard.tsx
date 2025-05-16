@@ -3,11 +3,12 @@ import {
   PlusIcon, FilterIcon, ChevronDownIcon, ChevronUpIcon, XIcon, MinusIcon,
   PlusCircleIcon, Trash2Icon, AlertTriangleIcon, CalendarIcon, ClockIcon,
   CheckCircleIcon, ListTodoIcon, BarChart3Icon, MessageSquareIcon, InfoIcon,
-  EditIcon, SlidersHorizontal, ArrowRightIcon, UserIcon, SendIcon
+  EditIcon, SlidersHorizontal, ArrowRightIcon, UserIcon, SendIcon, LockIcon
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import TaskForm from '../components/TaskForm';
 import { useNotifications } from '../contexts/NotificationContext';
+import ConfirmationDialog from '../components/ConfirmationDialog';
 import { fetchData, addData, updateData, removeData } from '../firebase/database';
 import { defaultTasks } from '../firebase/initData';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -80,6 +81,13 @@ const TaskBoard = () => {
   // State for task detail modal tabs
   const [activeTaskTab, setActiveTaskTab] = useState<'details' | 'activity'>('details');
   const [newComment, setNewComment] = useState('');
+
+  // State for progress confirmation dialog
+  const [isProgressConfirmOpen, setIsProgressConfirmOpen] = useState(false);
+  const [pendingProgressUpdate, setPendingProgressUpdate] = useState<{
+    taskId: string;
+    newState: 'not-started' | 'in-progress' | 'completed';
+  } | null>(null);
 
   // Fetch tasks from Firebase
   useEffect(() => {
@@ -238,17 +246,9 @@ const TaskBoard = () => {
   const toggleMemberExpanded = (memberName: string) => {
     setExpandedMembers(prev => prev.includes(memberName) ? prev.filter(name => name !== memberName) : [...prev, memberName]);
   };
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'todo':
-        return 'bg-[#f5eee8] text-[#d4a5a5]';
-      case 'inProgress':
-        return 'bg-[#f0f0e8] text-[#b8b87e]';
-      case 'done':
-        return 'bg-[#e8f3f1] text-[#7eb8ab]';
-      default:
-        return 'bg-[#f5f0e8] text-[#7a7067]';
-    }
+  const getStatusColor = () => {
+    // Return consistent styling for all status indicators
+    return 'bg-[#f5eee8] text-[#d4a5a5] border border-[#d4a5a5]/20 shadow-sm';
   };
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -299,11 +299,31 @@ const TaskBoard = () => {
 
   // Function to handle progress state update
   const handleProgressStateUpdate = async (taskId: string, newState: 'not-started' | 'in-progress' | 'completed') => {
-    // Convert state to percentage
-    const newProgress = progressStateToPercentage(newState);
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
 
-    // Call the existing progress update function with the new percentage
-    await handleProgressUpdate(taskId, newProgress);
+    // Check if user is admin
+    if (isAdmin()) {
+      // Admins can always update progress
+      const newProgress = progressStateToPercentage(newState);
+      await handleProgressUpdate(taskId, newProgress);
+      return;
+    }
+
+    // For non-admin users, check if the task already has progress set
+    const currentProgress = task.progress || 0;
+    const currentState = percentageToProgressState(currentProgress);
+
+    // If the task already has progress set (not at 0%), show confirmation dialog
+    if (currentProgress > 0 && currentState !== newState) {
+      // Store the pending update and show confirmation dialog
+      setPendingProgressUpdate({ taskId, newState });
+      setIsProgressConfirmOpen(true);
+    } else {
+      // If task has no progress yet, allow the update without confirmation
+      const newProgress = progressStateToPercentage(newState);
+      await handleProgressUpdate(taskId, newProgress);
+    }
   };
 
   const handleProgressUpdate = async (taskId: string, newProgress: number) => {
@@ -451,6 +471,20 @@ const TaskBoard = () => {
 
     setTaskToDelete({ id: taskId, title: taskTitle });
     setIsDeleteModalOpen(true);
+  };
+
+  // Function to handle confirmed progress update
+  const handleConfirmProgressUpdate = async () => {
+    if (!pendingProgressUpdate) return;
+
+    const { taskId, newState } = pendingProgressUpdate;
+    const newProgress = progressStateToPercentage(newState);
+
+    // Call the existing progress update function with the new percentage
+    await handleProgressUpdate(taskId, newProgress);
+
+    // Clear the pending update
+    setPendingProgressUpdate(null);
   };
 
   // Function to handle task deletion
@@ -662,14 +696,14 @@ const TaskBoard = () => {
           )}
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-8">
           {Object.entries(tasksByMember).map(([memberName, {
           avatar,
           tasks
         }]) => (
-            <div key={memberName} className="bg-white rounded-xl overflow-hidden shadow-sm">
+            <div key={memberName} className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 border border-[#f5f0e8]">
               <button
-                className="w-full p-4 flex items-center justify-between hover:bg-[#f5f0e8]/30 transition-colors"
+                className="w-full p-5 flex items-center justify-between hover:bg-[#f5f0e8]/30 transition-all duration-200"
                 onClick={() => toggleMemberExpanded(memberName)}
                 aria-expanded={expandedMembers.includes(memberName)}
                 aria-controls={`tasks-${memberName.replace(/\s+/g, '-').toLowerCase()}`}
@@ -679,77 +713,131 @@ const TaskBoard = () => {
                     src={avatar}
                     alt={memberName}
                     size="lg"
-                    className="mr-4"
+                    className="mr-4 border-2 border-[#d4a5a5]/20"
                   />
                   <div>
-                    <h3 className="text-[#3a3226] font-medium text-lg">{memberName}</h3>
+                    <h3 className="text-[#3a3226] font-medium text-lg md:text-xl">{memberName}</h3>
                     <p className="text-sm text-[#7a7067]">
                       {tasks.length} task{tasks.length !== 1 ? 's' : ''}
                     </p>
                   </div>
                 </div>
-                {expandedMembers.includes(memberName) ?
-                  <ChevronUpIcon className="h-6 w-6 text-[#7a7067]" /> :
-                  <ChevronDownIcon className="h-6 w-6 text-[#7a7067]" />
-                }
+                <div className="flex items-center space-x-4">
+                  {/* Task Count Indicators - Desktop */}
+                  <div className="hidden md:flex items-center space-x-4">
+                    <div className="flex flex-col items-center">
+                      <span className="text-xs text-[#7a7067] mb-1">Untouched Task</span>
+                      <div className="h-10 w-10 rounded-lg border border-[#f5f0e8] flex items-center justify-center bg-white shadow-sm hover:shadow-md transition-shadow">
+                        <span className="font-mono text-[#3a3226] font-medium">
+                          {tasks.filter(task => task.progress === 0).length.toString().padStart(2, '0')}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <span className="text-xs text-[#7a7067] mb-1">In Progress</span>
+                      <div className="h-10 w-10 rounded-lg border border-[#f5f0e8] flex items-center justify-center bg-white shadow-sm hover:shadow-md transition-shadow">
+                        <span className="font-mono text-[#3a3226] font-medium">
+                          {tasks.filter(task => task.progress === 50).length.toString().padStart(2, '0')}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <span className="text-xs text-[#7a7067] mb-1">Finished</span>
+                      <div className="h-10 w-10 rounded-lg border border-[#f5f0e8] flex items-center justify-center bg-white shadow-sm hover:shadow-md transition-shadow">
+                        <span className="font-mono text-[#3a3226] font-medium">
+                          {tasks.filter(task => task.progress === 100).length.toString().padStart(2, '0')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Task Count Indicators - Mobile */}
+                  <div className="flex md:hidden items-center space-x-2">
+                    <div className="flex items-center space-x-2">
+                      <div className="flex flex-col items-center">
+                        <div className="h-8 w-8 rounded-lg border border-[#f5f0e8] flex items-center justify-center bg-white shadow-sm hover:shadow-md transition-shadow">
+                          <span className="font-mono text-[#3a3226] text-sm font-medium">
+                            {tasks.filter(task => task.progress === 0).length.toString().padStart(2, '0')}
+                          </span>
+                        </div>
+                        <span className="text-[9px] text-[#7a7067] mt-0.5">Todo</span>
+                      </div>
+                      <div className="flex flex-col items-center">
+                        <div className="h-8 w-8 rounded-lg border border-[#f5f0e8] flex items-center justify-center bg-white shadow-sm hover:shadow-md transition-shadow">
+                          <span className="font-mono text-[#3a3226] text-sm font-medium">
+                            {tasks.filter(task => task.progress === 50).length.toString().padStart(2, '0')}
+                          </span>
+                        </div>
+                        <span className="text-[9px] text-[#7a7067] mt-0.5">In Prog</span>
+                      </div>
+                      <div className="flex flex-col items-center">
+                        <div className="h-8 w-8 rounded-lg border border-[#f5f0e8] flex items-center justify-center bg-white shadow-sm hover:shadow-md transition-shadow">
+                          <span className="font-mono text-[#3a3226] text-sm font-medium">
+                            {tasks.filter(task => task.progress === 100).length.toString().padStart(2, '0')}
+                          </span>
+                        </div>
+                        <span className="text-[9px] text-[#7a7067] mt-0.5">Done</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {expandedMembers.includes(memberName) ?
+                    <ChevronUpIcon className="h-6 w-6 text-[#d4a5a5]" /> :
+                    <ChevronDownIcon className="h-6 w-6 text-[#d4a5a5]" />
+                  }
+                </div>
               </button>
 
               {expandedMembers.includes(memberName) && (
                 <div
                   id={`tasks-${memberName.replace(/\s+/g, '-').toLowerCase()}`}
-                  className="p-4 border-t border-[#f5f0e8] space-y-4"
+                  className="p-5 border-t border-[#f5f0e8] space-y-5 bg-[#f5f0e8]/10"
                 >
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                     {tasks.map(task => (
                       <div
                         key={task.id}
-                        className="bg-[#f5f0e8]/30 rounded-lg p-4 hover:bg-[#f5f0e8]/50 transition-colors h-full flex flex-col relative group"
+                        className="bg-white rounded-xl p-5 hover:bg-[#f5f0e8]/20 transition-all duration-200 h-full flex flex-col relative group shadow-sm hover:shadow-md border border-[#f5f0e8]"
                       >
                         {/* Task content - clickable */}
                         <div
                           className="flex-grow cursor-pointer"
                           onClick={() => setSelectedTask(task)}
                         >
-                          <div className="flex justify-between items-start mb-3">
-                            <h4 className="text-[#3a3226] font-medium text-base">
+                          <div className="flex justify-between items-start mb-4">
+                            <h4 className="text-[#3a3226] font-medium text-base md:text-lg">
                               {task.title}
                             </h4>
-                            <span className={`px-2 py-1 rounded-full text-xs flex items-center ${
-                              task.progress === 0
-                                ? 'bg-[#f5eee8] text-[#7a7067]'
-                                : task.progress === 50
-                                  ? 'bg-[#f0f0e8] text-[#b8b87e]'
-                                  : 'bg-[#e8f3f1] text-[#7eb8ab]'
-                            } whitespace-nowrap ml-2`}>
+                            <span className="px-3 py-1.5 rounded-full text-xs font-medium flex items-center bg-[#f5eee8] text-[#d4a5a5] border border-[#d4a5a5]/20 whitespace-nowrap ml-2 shadow-sm">
                               {task.progress === 0 ? (
-                                <><ListTodoIcon className="h-3 w-3 mr-1" />Not Started</>
+                                <><ListTodoIcon className="h-3.5 w-3.5 mr-1.5 text-[#d4a5a5]" />Not Started (0%)</>
                               ) : task.progress === 50 ? (
-                                <><BarChart3Icon className="h-3 w-3 mr-1" />In Progress</>
+                                <><BarChart3Icon className="h-3.5 w-3.5 mr-1.5 text-[#d4a5a5]" />In Progress (50%)</>
                               ) : (
-                                <><CheckCircleIcon className="h-3 w-3 mr-1" />Completed</>
+                                <><CheckCircleIcon className="h-3.5 w-3.5 mr-1.5 text-[#d4a5a5]" />Completed (100%)</>
                               )}
                             </span>
                           </div>
-                          <p className="text-sm text-[#7a7067] mb-4 line-clamp-3 flex-grow">
+                          <p className="text-sm text-[#7a7067] mb-5 line-clamp-3 flex-grow leading-relaxed">
                             {task.description}
                           </p>
                         </div>
 
                         {/* Task footer */}
-                        <div className="flex flex-wrap justify-between items-center gap-2 mt-auto">
+                        <div className="flex flex-wrap justify-between items-center gap-3 mt-auto pt-3 border-t border-[#f5f0e8]">
                           <div className="flex items-center">
                             <Avatar
                               src={task.assignee.avatar}
                               alt={task.assignee.name}
                               size="xs"
-                              className="mr-2"
+                              className="mr-2 border border-[#d4a5a5]/20"
                             />
                             <span className={`text-xs font-medium ${getPriorityColor(task.priority)}`}>
                               {task.priority} Priority
                             </span>
                           </div>
                           {task.dueDate && (
-                            <span className="text-xs text-[#7a7067]">
+                            <span className="text-xs text-[#7a7067] bg-[#f5f0e8]/30 px-2 py-1 rounded-lg border border-[#f5f0e8]">
                               Due {new Date(task.dueDate).toLocaleDateString()}
                             </span>
                           )}
@@ -757,9 +845,9 @@ const TaskBoard = () => {
 
                         {/* Admin actions - only visible on hover */}
                         {isAdmin() && (
-                          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-200">
                             <button
-                              className="p-1.5 bg-white rounded-full text-[#d4a5a5] hover:text-[#c99595] shadow-sm"
+                              className="p-2 bg-white rounded-full text-[#d4a5a5] hover:text-white hover:bg-[#d4a5a5] shadow-sm border border-[#d4a5a5]/20 transition-all duration-200"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 confirmDeleteTask(task.id, task.title);
@@ -829,28 +917,28 @@ const TaskBoard = () => {
 
               {/* Task Metadata */}
               <div className="flex flex-wrap gap-2 mt-3 items-center">
-                <span className={`text-sm font-medium ${getPriorityColor(selectedTask.priority)} px-3 py-1.5 bg-white rounded-lg flex items-center`}>
+                <span className={`text-sm font-medium ${getPriorityColor(selectedTask.priority)} px-3 py-1.5 bg-white rounded-lg flex items-center border border-[#f5f0e8]`}>
                   <AlertTriangleIcon className="h-3.5 w-3.5 mr-1.5" />
                   {selectedTask.priority} Priority
                 </span>
-                <span className={`px-3 py-1.5 rounded-lg text-sm ${getStatusColor(selectedTask.status)} flex items-center`}>
+                <span className="px-3 py-1.5 rounded-full text-sm font-medium flex items-center bg-[#f5eee8] text-[#d4a5a5] border border-[#d4a5a5]/20 shadow-sm">
                   {selectedTask.status === 'todo' ? (
-                    <><ListTodoIcon className="h-3.5 w-3.5 mr-1.5" />To Do</>
+                    <><ListTodoIcon className="h-3.5 w-3.5 mr-1.5 text-[#d4a5a5]" />Not Started (0%)</>
                   ) : selectedTask.status === 'inProgress' ? (
-                    <><BarChart3Icon className="h-3.5 w-3.5 mr-1.5" />In Progress</>
+                    <><BarChart3Icon className="h-3.5 w-3.5 mr-1.5 text-[#d4a5a5]" />In Progress (50%)</>
                   ) : (
-                    <><CheckCircleIcon className="h-3.5 w-3.5 mr-1.5" />Done</>
+                    <><CheckCircleIcon className="h-3.5 w-3.5 mr-1.5 text-[#d4a5a5]" />Completed (100%)</>
                   )}
                 </span>
                 {selectedTask.dueDate && (
-                  <span className="text-sm text-[#7a7067] px-3 py-1.5 bg-white rounded-lg flex items-center">
-                    <CalendarIcon className="h-3.5 w-3.5 mr-1.5" />
+                  <span className="text-sm text-[#7a7067] px-3 py-1.5 bg-white rounded-lg flex items-center border border-[#f5f0e8]">
+                    <CalendarIcon className="h-3.5 w-3.5 mr-1.5 text-[#d4a5a5]" />
                     Due: {new Date(selectedTask.dueDate).toLocaleDateString()}
                   </span>
                 )}
                 {selectedTask.createdAt && (
-                  <span className="text-sm text-[#7a7067] px-3 py-1.5 bg-white rounded-lg flex items-center">
-                    <ClockIcon className="h-3.5 w-3.5 mr-1.5" />
+                  <span className="text-sm text-[#7a7067] px-3 py-1.5 bg-white rounded-lg flex items-center border border-[#f5f0e8]">
+                    <ClockIcon className="h-3.5 w-3.5 mr-1.5 text-[#d4a5a5]" />
                     Created: {formatDate(selectedTask.createdAt)}
                   </span>
                 )}
@@ -938,26 +1026,26 @@ const TaskBoard = () => {
                     <div className="mb-5">
                       <div className="flex justify-between items-center mb-3">
                         <span className="text-sm text-[#7a7067] font-medium">Current Status</span>
-                        <span className={`text-sm font-medium px-3 py-1.5 rounded-full ${
-                          selectedTask.progress === 0
-                            ? 'bg-[#f5eee8] text-[#7a7067]'
-                            : selectedTask.progress === 50
-                              ? 'bg-[#f0f0e8] text-[#b8b87e]'
-                              : 'bg-[#e8f3f1] text-[#7eb8ab]'
-                        }`}>
-                          {getProgressStateLabel(percentageToProgressState(selectedTask.progress || 0))}
+                        <span className="text-sm font-medium px-3 py-1.5 rounded-full shadow-sm bg-[#f5eee8] text-[#d4a5a5] border border-[#d4a5a5]/20 flex items-center">
+                          {selectedTask.progress === 0 ? (
+                            <><ListTodoIcon className="h-3.5 w-3.5 mr-1.5 text-[#d4a5a5]" />Not Started (0%)</>
+                          ) : selectedTask.progress === 50 ? (
+                            <><BarChart3Icon className="h-3.5 w-3.5 mr-1.5 text-[#d4a5a5]" />In Progress (50%)</>
+                          ) : (
+                            <><CheckCircleIcon className="h-3.5 w-3.5 mr-1.5 text-[#d4a5a5]" />Completed (100%)</>
+                          )}
                         </span>
                       </div>
 
                       {/* Progress Bar - Visual representation */}
                       <div className="h-3 bg-white rounded-full overflow-hidden border border-[#f5f0e8] shadow-sm">
                         <div
-                          className={`h-full rounded-full transition-all duration-500 ease-in-out ${
+                          className={`h-full rounded-full transition-all duration-500 ease-in-out bg-[#d4a5a5] ${
                             selectedTask.progress === 0
-                              ? 'bg-[#7a7067] w-0'
+                              ? 'opacity-30 w-0'
                               : selectedTask.progress === 50
-                                ? 'bg-[#b8b87e] w-1/2'
-                                : 'bg-[#7eb8ab] w-full'
+                                ? 'opacity-70 w-1/2'
+                                : 'opacity-100 w-full'
                           }`}
                         ></div>
                       </div>
@@ -966,24 +1054,34 @@ const TaskBoard = () => {
                     {/* Progress Update Controls - Only show if user is admin or task assignee */}
                     {canUpdateProgress(selectedTask) && (
                       <div className="mt-5 pt-4 border-t border-[#f5f0e8]/70">
-                        <p className="text-sm text-[#3a3226] font-medium mb-4">Update progress state:</p>
+                        <div className="flex justify-between items-center mb-4">
+                          <p className="text-sm text-[#3a3226] font-medium">Update progress state:</p>
+
+                          {/* Lock indicator for non-admin users */}
+                          {!isAdmin() && selectedTask.progress && selectedTask.progress > 0 && (
+                            <div className="flex items-center text-xs text-[#d4a5a5]">
+                              <LockIcon className="h-3 w-3 mr-1" />
+                              <span>Confirmation required to change progress</span>
+                            </div>
+                          )}
+                        </div>
 
                         {/* Three-State Progress Options */}
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                           {/* Not Started Option */}
                           <button
                             onClick={() => handleProgressStateUpdate(selectedTask.id, 'not-started')}
-                            className={`flex flex-col items-center p-4 rounded-lg transition-all duration-200 ${
+                            className={`flex flex-col items-center p-4 rounded-xl transition-all duration-200 ${
                               (selectedTask.progress || 0) === 0
-                                ? 'bg-[#f5eee8] border-2 border-[#7a7067] shadow-md'
-                                : 'bg-white border border-[#f5f0e8] hover:bg-[#f5f0e8]/50 hover:shadow-md'
+                                ? 'bg-[#f5eee8] border-2 border-[#d4a5a5] shadow-md'
+                                : 'bg-white border border-[#f5f0e8] hover:bg-[#f5eee8]/50 hover:shadow-md'
                             } focus:outline-none focus:ring-2 focus:ring-[#d4a5a5] focus:ring-offset-1`}
                             aria-pressed={(selectedTask.progress || 0) === 0}
                           >
                             <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 ${
                               (selectedTask.progress || 0) === 0
-                                ? 'bg-[#7a7067] text-white'
-                                : 'bg-[#f5f0e8] text-[#7a7067]'
+                                ? 'bg-[#d4a5a5] text-white'
+                                : 'bg-[#f5eee8] text-[#d4a5a5]'
                             }`}>
                               <ListTodoIcon className="h-6 w-6" />
                             </div>
@@ -992,24 +1090,24 @@ const TaskBoard = () => {
                                 ? 'text-[#3a3226]'
                                 : 'text-[#7a7067]'
                             }`}>
-                              Not Started
+                              Not Started (0%)
                             </span>
                           </button>
 
                           {/* In Progress Option */}
                           <button
                             onClick={() => handleProgressStateUpdate(selectedTask.id, 'in-progress')}
-                            className={`flex flex-col items-center p-4 rounded-lg transition-all duration-200 ${
+                            className={`flex flex-col items-center p-4 rounded-xl transition-all duration-200 ${
                               (selectedTask.progress || 0) === 50
-                                ? 'bg-[#f0f0e8] border-2 border-[#b8b87e] shadow-md'
-                                : 'bg-white border border-[#f5f0e8] hover:bg-[#f5f0e8]/50 hover:shadow-md'
+                                ? 'bg-[#f5eee8] border-2 border-[#d4a5a5] shadow-md'
+                                : 'bg-white border border-[#f5f0e8] hover:bg-[#f5eee8]/50 hover:shadow-md'
                             } focus:outline-none focus:ring-2 focus:ring-[#d4a5a5] focus:ring-offset-1`}
                             aria-pressed={(selectedTask.progress || 0) === 50}
                           >
                             <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 ${
                               (selectedTask.progress || 0) === 50
-                                ? 'bg-[#b8b87e] text-white'
-                                : 'bg-[#f5f0e8] text-[#7a7067]'
+                                ? 'bg-[#d4a5a5] text-white'
+                                : 'bg-[#f5eee8] text-[#d4a5a5]'
                             }`}>
                               <BarChart3Icon className="h-6 w-6" />
                             </div>
@@ -1018,24 +1116,24 @@ const TaskBoard = () => {
                                 ? 'text-[#3a3226]'
                                 : 'text-[#7a7067]'
                             }`}>
-                              In Progress
+                              In Progress (50%)
                             </span>
                           </button>
 
                           {/* Completed Option */}
                           <button
                             onClick={() => handleProgressStateUpdate(selectedTask.id, 'completed')}
-                            className={`flex flex-col items-center p-4 rounded-lg transition-all duration-200 ${
+                            className={`flex flex-col items-center p-4 rounded-xl transition-all duration-200 ${
                               (selectedTask.progress || 0) === 100
-                                ? 'bg-[#e8f3f1] border-2 border-[#7eb8ab] shadow-md'
-                                : 'bg-white border border-[#f5f0e8] hover:bg-[#f5f0e8]/50 hover:shadow-md'
+                                ? 'bg-[#f5eee8] border-2 border-[#d4a5a5] shadow-md'
+                                : 'bg-white border border-[#f5f0e8] hover:bg-[#f5eee8]/50 hover:shadow-md'
                             } focus:outline-none focus:ring-2 focus:ring-[#d4a5a5] focus:ring-offset-1`}
                             aria-pressed={(selectedTask.progress || 0) === 100}
                           >
                             <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 ${
                               (selectedTask.progress || 0) === 100
-                                ? 'bg-[#7eb8ab] text-white'
-                                : 'bg-[#f5f0e8] text-[#7a7067]'
+                                ? 'bg-[#d4a5a5] text-white'
+                                : 'bg-[#f5eee8] text-[#d4a5a5]'
                             }`}>
                               <CheckCircleIcon className="h-6 w-6" />
                             </div>
@@ -1044,7 +1142,7 @@ const TaskBoard = () => {
                                 ? 'text-[#3a3226]'
                                 : 'text-[#7a7067]'
                             }`}>
-                              Completed
+                              Completed (100%)
                             </span>
                           </button>
                         </div>
@@ -1227,6 +1325,25 @@ const TaskBoard = () => {
       )}
       {/* Only show edit form if user is admin */}
       {isAdmin() && editingTask && <TaskForm onClose={() => setEditingTask(null)} onSubmit={updatedTask => handleEditTask(editingTask.id, updatedTask)} initialTask={editingTask} />}
+
+      {/* Progress Update Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={isProgressConfirmOpen}
+        onClose={() => {
+          setIsProgressConfirmOpen(false);
+          setPendingProgressUpdate(null);
+        }}
+        onConfirm={handleConfirmProgressUpdate}
+        title="Confirm Progress Change"
+        message={
+          pendingProgressUpdate
+            ? `You've already started tracking progress on this task. Are you sure you want to change it to "${getProgressStateLabel(pendingProgressUpdate.newState)}"?`
+            : "Are you sure you want to change the progress status?"
+        }
+        confirmText="Yes, Change Progress"
+        cancelText="Cancel"
+        type="lock"
+      />
 
       {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && taskToDelete && (
