@@ -16,6 +16,7 @@ interface Event {
     avatar: string;
   };
   description?: string;
+  meetingLink?: string; // URL for virtual meetings
 }
 
 // Define User interface
@@ -47,6 +48,8 @@ const CalendarView = () => {
   const [loadingTeamMembers, setLoadingTeamMembers] = useState(true);
   const [teamMemberError, setTeamMemberError] = useState<string | null>(null);
   const [selectedAssignee, setSelectedAssignee] = useState<string>('');
+  const [hasMeetingLink, setHasMeetingLink] = useState<boolean>(false);
+  const [meetingLink, setMeetingLink] = useState<string>('');
 
   // State for event detail modal
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
@@ -85,10 +88,16 @@ const CalendarView = () => {
     const unsubscribe = fetchData<User[]>('users', (data) => {
       try {
         if (data) {
-          // Filter to only include approved users
+          // Filter to include all approved users, including admins
+          // Make sure to include all admin users regardless of approval status
           const approvedUsers = data.filter(user =>
-            user.approvalStatus === 'approved' || user.status === 'active'
+            user.approvalStatus === 'approved' || user.status === 'active' || user.role === 'admin'
           );
+
+          // Log the users to help with debugging
+          console.log('All users:', data);
+          console.log('Approved users and admins:', approvedUsers);
+          console.log('Admin users:', approvedUsers.filter(user => user.role === 'admin'));
 
           if (approvedUsers.length === 0) {
             setTeamMemberError('No approved team members found.');
@@ -193,6 +202,8 @@ const CalendarView = () => {
     // Only admin can open the create event modal
     if (!isAdmin()) return;
     setSelectedDate(date);
+    setHasMeetingLink(false);
+    setMeetingLink('');
     setIsModalOpen(true);
   };
   const handleAddEvent = async (e: React.FormEvent) => {
@@ -227,7 +238,8 @@ const CalendarView = () => {
           name: selectedMember.name,
           avatar: selectedMember.avatar || ''
         } : undefined,
-        description: notes
+        description: notes,
+        meetingLink: hasMeetingLink ? meetingLink : undefined
       };
 
       // Add event to Firebase
@@ -238,8 +250,8 @@ const CalendarView = () => {
 
       // Add the new event to the local state to update UI immediately
       // This ensures the date will be highlighted with the appropriate styling
-      if (eventRef && eventRef.id) {
-        const newEventWithId = { ...newEvent, id: eventRef.id };
+      if (eventRef) {
+        const newEventWithId = { ...newEvent, id: eventRef };
         setEvents(prevEvents => [...prevEvents, newEventWithId]);
       }
 
@@ -536,6 +548,8 @@ const CalendarView = () => {
             // Close when clicking outside the modal
             if (e.target === e.currentTarget) {
               setIsModalOpen(false);
+              setHasMeetingLink(false);
+              setMeetingLink('');
             }
           }}
         >
@@ -546,7 +560,11 @@ const CalendarView = () => {
                 Add New Event
               </h2>
               <button
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => {
+                  setIsModalOpen(false);
+                  setHasMeetingLink(false);
+                  setMeetingLink('');
+                }}
                 className="w-8 h-8 flex items-center justify-center rounded-full text-[#7a7067] hover:text-[#3a3226] hover:bg-[#f5f0e8] transition-colors"
                 aria-label="Close modal"
               >
@@ -679,7 +697,7 @@ const CalendarView = () => {
                               <option value="">None</option>
                               {teamMembers.map(member => (
                                 <option key={member.id} value={member.id}>
-                                  {member.name}
+                                  {member.name} {member.role === 'admin' ? '(Admin)' : ''}
                                 </option>
                               ))}
                             </select>
@@ -704,8 +722,18 @@ const CalendarView = () => {
                               <p className="text-[#3a3226] font-medium">
                                 {teamMembers.find(m => m.id === selectedAssignee)?.name}
                               </p>
-                              <p className="text-xs text-[#7a7067] capitalize">
-                                {teamMembers.find(m => m.id === selectedAssignee)?.role.replace('_', ' ')}
+                              <p className="text-xs text-[#7a7067] capitalize flex items-center">
+                                {teamMembers.find(m => m.id === selectedAssignee)?.role === 'admin' ? (
+                                  <>
+                                    <span className="inline-block w-2 h-2 rounded-full bg-[#d4a5a5] mr-1"></span>
+                                    Administrator
+                                  </>
+                                ) : (
+                                  <>
+                                    <span className="inline-block w-2 h-2 rounded-full bg-[#7a7067] mr-1"></span>
+                                    Team Member
+                                  </>
+                                )}
                               </p>
                             </div>
                           </div>
@@ -723,6 +751,46 @@ const CalendarView = () => {
                       placeholder="Add any additional notes about this event..."
                     ></textarea>
                   </div>
+
+                  {/* Meeting Link Section */}
+                  <div className="bg-[#f5f0e8]/30 p-4 rounded-lg border border-[#f5f0e8]">
+                    <h3 className="text-[#3a3226] font-medium mb-4 text-sm uppercase tracking-wider">Meeting Link</h3>
+
+                    <div className="space-y-4">
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id="hasMeetingLink"
+                          checked={hasMeetingLink}
+                          onChange={(e) => setHasMeetingLink(e.target.checked)}
+                          className="w-4 h-4 text-[#d4a5a5] border-[#f5f0e8] rounded focus:ring-[#d4a5a5]"
+                        />
+                        <label htmlFor="hasMeetingLink" className="ml-2 text-[#3a3226] text-sm font-medium">
+                          Has Meeting Link
+                        </label>
+                      </div>
+
+                      {hasMeetingLink && (
+                        <div>
+                          <label className="block text-[#3a3226] text-sm font-medium mb-2">
+                            Meeting URL
+                          </label>
+                          <input
+                            type="url"
+                            name="meetingLink"
+                            value={meetingLink}
+                            onChange={(e) => setMeetingLink(e.target.value)}
+                            className="bg-white border border-[#f5f0e8] text-[#3a3226] w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d4a5a5] focus:border-[#d4a5a5] hover:border-[#d4a5a5]/50 transition-colors"
+                            placeholder="https://zoom.us/j/123456789"
+                            required={hasMeetingLink}
+                          />
+                          <p className="text-xs text-[#7a7067] mt-1">
+                            Enter the full URL for Zoom, Google Meet, Microsoft Teams, etc.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -731,7 +799,11 @@ const CalendarView = () => {
                 <button
                   type="button"
                   className="px-6 py-3 text-[#7a7067] bg-[#f5f0e8] rounded-lg hover:bg-[#ebe6de] transition-colors font-medium"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setHasMeetingLink(false);
+                    setMeetingLink('');
+                  }}
                 >
                   Cancel
                 </button>
@@ -857,6 +929,27 @@ const CalendarView = () => {
                   <div className="bg-[#f5f0e8]/30 p-4 rounded-xl shadow-md hover:shadow-lg transition-shadow">
                     <div className="text-[#7a7067] text-sm mb-2 font-medium">Description</div>
                     <p className="text-[#3a3226] leading-relaxed">{selectedEvent.description}</p>
+                  </div>
+                )}
+
+                {/* Meeting Link Section */}
+                {selectedEvent.meetingLink && (
+                  <div className="bg-[#f5f0e8]/30 p-4 rounded-xl shadow-md hover:shadow-lg transition-shadow">
+                    <div className="text-[#7a7067] text-sm mb-2 font-medium">Meeting Link</div>
+                    <a
+                      href={selectedEvent.meetingLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-4 py-2 bg-[#d4a5a5] text-white rounded-lg hover:bg-[#c99595] transition-colors text-sm font-medium"
+                    >
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                      </svg>
+                      Join Meeting
+                    </a>
+                    <p className="text-xs text-[#7a7067] mt-2 break-all">
+                      {selectedEvent.meetingLink}
+                    </p>
                   </div>
                 )}
 

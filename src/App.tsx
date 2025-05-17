@@ -17,6 +17,7 @@ import DownloadPage from './pages/DownloadPage';
 import Layout from './components/Layout';
 import NetworkStatus from './components/NetworkStatus';
 import InstallPrompt from './components/InstallPrompt';
+
 export function App() {
   const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
   const [offlineReady, setOfflineReady] = useState(false);

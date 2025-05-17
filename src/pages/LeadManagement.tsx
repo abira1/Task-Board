@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   PlusIcon,
   SearchIcon,
@@ -18,7 +18,10 @@ import {
   MapPinIcon,
   UserIcon,
   ChevronDownIcon,
-  ChevronUpIcon
+  ChevronUpIcon,
+  FilterIcon,
+  CalendarIcon,
+  SlidersIcon
 } from 'lucide-react';
 import { useNotifications } from '../contexts/NotificationContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -40,6 +43,50 @@ const LeadManagement = () => {
   const [expandedLeadId, setExpandedLeadId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Filter states
+  const [businessTypeFilter, setBusinessTypeFilter] = useState<string>('');
+  const [progressFilter, setProgressFilter] = useState<string>('');
+  const [dateAddedFilter, setDateAddedFilter] = useState<string>('');
+  const [handledByFilter, setHandledByFilter] = useState<string>('');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  // Business type options from LeadForm
+  const businessTypes = [
+    'Cafe',
+    'Salon & Beauty',
+    'Creative Agency',
+    'Home Decor Store',
+    'E-commerce Startup',
+    'Real Estate Agency',
+    'Technology',
+    'Healthcare',
+    'Education',
+    'Finance',
+    'Other'
+  ];
+
+  // Progress status options
+  const progressStatuses = [
+    'Untouched',
+    'Knocked',
+    'In Progress',
+    'Confirm',
+    'Canceled'
+  ];
+
+  // Extract unique team members who have handled leads
+  const teamMembers = useMemo(() => {
+    const uniqueMembers = new Set<string>();
+
+    leads.forEach(lead => {
+      if (lead.handledBy && lead.handledBy.name) {
+        uniqueMembers.add(lead.handledBy.name);
+      }
+    });
+
+    return Array.from(uniqueMembers).sort();
+  }, [leads]);
+
   // Debounced search function
   const debouncedSearch = useMemo(
     () => debounce((query: string) => {
@@ -53,17 +100,48 @@ const LeadManagement = () => {
     debouncedSearch(e.target.value);
   };
 
-  // Filter leads based on search query
+  // Filter leads based on search query and other filters
   const filteredLeads = useMemo(() => {
-    return leads.filter(lead =>
-      lead.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      lead.businessType.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      lead.contactPersonName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      lead.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      lead.progress.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      lead.handledBy.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [leads, searchQuery]);
+    return leads.filter(lead => {
+      // Text search filter
+      const matchesSearch = searchQuery === '' ||
+        lead.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lead.businessType.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lead.contactPersonName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lead.contactInfo.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lead.progress.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lead.handledBy.name.toLowerCase().includes(searchQuery.toLowerCase());
+
+      // Business type filter
+      const matchesBusinessType = businessTypeFilter === '' ||
+        lead.businessType === businessTypeFilter;
+
+      // Progress status filter
+      const matchesProgress = progressFilter === '' ||
+        lead.progress === progressFilter;
+
+      // Handled by filter
+      const matchesHandledBy = handledByFilter === '' ||
+        lead.handledBy.name === handledByFilter;
+
+      // Date added filter (exact date match)
+      let matchesDateAdded = true;
+      if (dateAddedFilter) {
+        const leadDate = new Date(lead.createdAt);
+        const filterDate = new Date(dateAddedFilter);
+
+        // Set both dates to midnight for date-only comparison
+        leadDate.setHours(0, 0, 0, 0);
+        filterDate.setHours(0, 0, 0, 0);
+
+        // Compare dates (year, month, day only)
+        matchesDateAdded = leadDate.getTime() === filterDate.getTime();
+      }
+
+      // Return true only if all filters match
+      return matchesSearch && matchesBusinessType && matchesProgress && matchesHandledBy && matchesDateAdded;
+    });
+  }, [leads, searchQuery, businessTypeFilter, progressFilter, handledByFilter, dateAddedFilter]);
 
   const handleAddLead = () => {
     // All users can add leads
@@ -102,6 +180,26 @@ const LeadManagement = () => {
 
   const toggleExpandLead = (leadId: string) => {
     setExpandedLeadId(currentId => currentId === leadId ? null : leadId);
+  };
+
+  // Toggle filters visibility
+  const toggleFilters = () => {
+    setIsFilterOpen(prevState => !prevState);
+  };
+
+  // Clear all filters
+  const clearFilters = () => {
+    setSearchQuery('');
+    setBusinessTypeFilter('');
+    setProgressFilter('');
+    setDateAddedFilter('');
+    setHandledByFilter('');
+
+    // Also clear the search input field value
+    const searchInput = document.querySelector('input[placeholder="Search leads..."]') as HTMLInputElement;
+    if (searchInput) {
+      searchInput.value = '';
+    }
   };
 
   const confirmDelete = async () => {
@@ -245,12 +343,13 @@ const LeadManagement = () => {
           </div>
           <div className="flex w-full md:w-auto gap-2">
             <button
-              onClick={refreshLeads}
-              className="flex items-center justify-center p-3 bg-[#f5f0e8] text-[#7a7067] rounded-lg hover:bg-[#ebe6de] transition-colors"
-              title="Refresh leads"
-              aria-label="Refresh leads"
+              onClick={toggleFilters}
+              className={`flex items-center justify-center p-3 ${isFilterOpen ? 'bg-[#d4a5a5] text-white' : 'bg-[#f5f0e8] text-[#7a7067]'} rounded-lg hover:bg-[#d4a5a5] hover:text-white transition-colors`}
+              title="Toggle filters"
+              aria-label="Toggle filters"
+              aria-expanded={isFilterOpen}
             >
-              <RefreshCwIcon className="h-5 w-5" />
+              <FilterIcon className="h-5 w-5" />
             </button>
             <button
               className="flex items-center px-4 py-3 bg-[#d4a5a5] text-white rounded-lg w-full md:w-auto justify-center"
@@ -259,6 +358,127 @@ const LeadManagement = () => {
               <PlusIcon className="h-5 w-5 mr-2" />
               <span>Add New Lead</span>
             </button>
+          </div>
+        </div>
+
+        {/* Filters Section */}
+        <div
+          className={`overflow-hidden transition-all duration-300 ease-in-out ${isFilterOpen ? 'max-h-[1000px] opacity-100 mb-6' : 'max-h-0 opacity-0 mb-0'}`}
+          aria-hidden={!isFilterOpen}
+        >
+          <div className="bg-[#f9f6f1] rounded-lg p-4 border border-[#f5f0e8]">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
+              <h3 className="text-[#3a3226] font-medium flex items-center mb-3 md:mb-0">
+                <FilterIcon className="h-4 w-4 mr-2 text-[#d4a5a5]" />
+                Filter Leads
+              </h3>
+              <button
+                onClick={clearFilters}
+                className="text-[#7a7067] text-sm hover:text-[#d4a5a5] transition-colors flex items-center"
+              >
+                <XIcon className="h-4 w-4 mr-1" />
+                Clear Filters
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Business Type Filter */}
+              <div>
+                <label className="block text-[#3a3226] text-sm font-medium mb-2">
+                  Business Type
+                </label>
+                <select
+                  value={businessTypeFilter}
+                  onChange={(e) => setBusinessTypeFilter(e.target.value)}
+                  className="bg-white text-[#3a3226] w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d4a5a5] border border-[#f5f0e8]"
+                >
+                  <option value="">All Business Types</option>
+                  {businessTypes.map((type) => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Progress Status Filter */}
+              <div>
+                <label className="block text-[#3a3226] text-sm font-medium mb-2">
+                  Progress Status
+                </label>
+                <select
+                  value={progressFilter}
+                  onChange={(e) => setProgressFilter(e.target.value)}
+                  className="bg-white text-[#3a3226] w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d4a5a5] border border-[#f5f0e8]"
+                >
+                  <option value="">All Statuses</option>
+                  {progressStatuses.map((status) => (
+                    <option key={status} value={status}>{status}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Date Added Filter */}
+              <div>
+                <label className="block text-[#3a3226] text-sm font-medium mb-2">
+                  Date Added
+                </label>
+                <div className="relative">
+                  <style>
+                    {`
+                      /* Hide default calendar icon in all browsers */
+                      input[type="date"]::-webkit-calendar-picker-indicator {
+                        display: none !important;
+                        -webkit-appearance: none !important;
+                        opacity: 0 !important;
+                        width: 0 !important;
+                        height: 0 !important;
+                        padding: 0 !important;
+                        margin: 0 !important;
+                      }
+                      input[type="date"]::-webkit-inner-spin-button,
+                      input[type="date"]::-webkit-outer-spin-button {
+                        -webkit-appearance: none !important;
+                        margin: 0 !important;
+                      }
+                      input[type="date"]::-moz-calendar-picker-indicator {
+                        display: none !important;
+                      }
+                      input[type="date"] {
+                        -moz-appearance: none !important;
+                        -webkit-appearance: none !important;
+                      }
+                    `}
+                  </style>
+                  <input
+                    type="date"
+                    value={dateAddedFilter}
+                    onChange={(e) => setDateAddedFilter(e.target.value)}
+                    className="bg-white text-[#3a3226] w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d4a5a5] border border-[#f5f0e8] appearance-none"
+                    style={{ colorScheme: 'normal' }}
+                  />
+                  {/* Custom calendar icon with Toiral design system colors */}
+                  <div className="absolute right-0 top-0 h-full w-12 flex items-center justify-center pointer-events-none bg-white rounded-r-lg">
+                    <CalendarIcon className="h-5 w-5 text-[#7a7067]" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Handled By Filter */}
+              <div>
+                <label className="block text-[#3a3226] text-sm font-medium mb-2">
+                  Handled By
+                </label>
+                <select
+                  value={handledByFilter}
+                  onChange={(e) => setHandledByFilter(e.target.value)}
+                  className="bg-white text-[#3a3226] w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d4a5a5] border border-[#f5f0e8]"
+                >
+                  <option value="">All Team Members</option>
+                  {teamMembers.map((member) => (
+                    <option key={member} value={member}>{member}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -318,7 +538,7 @@ const LeadManagement = () => {
 
                 {/* Table Body */}
                 <div>
-                  {filteredLeads.map((lead, index) => (
+                  {filteredLeads.map((lead) => (
                     <div key={lead.id}>
                       {/* Main Lead Row - Clickable */}
                       <div
@@ -510,7 +730,7 @@ const LeadManagement = () => {
 
             {/* Mobile Card View */}
             <div className="md:hidden space-y-4">
-              {filteredLeads.map((lead, index) => (
+              {filteredLeads.map((lead) => (
                 <div
                   key={lead.id}
                   className={`${expandedLeadId === lead.id ? 'bg-[#f9f6f1]' : 'bg-white'} rounded-lg border border-[#f5f0e8] overflow-hidden shadow-sm`}
