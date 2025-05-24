@@ -12,7 +12,11 @@ import {
   UserIcon,
   BuildingIcon,
   DownloadIcon,
-  BarChart3Icon
+  BarChart3Icon,
+  Users2Icon,
+  FileTextIcon,
+  ReceiptIcon,
+  CreditCardIcon
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
@@ -72,6 +76,10 @@ const Layout = () => {
     if (path.includes('/leads')) return 'Lead Management';
     if (path.includes('/team')) return 'Team Management';
     if (path.includes('/progress')) return 'Progress Tracker';
+    if (path.includes('/clients')) return 'Client Management';
+    if (path.includes('/quotations')) return 'Quotations';
+    if (path.includes('/invoices')) return 'Invoices';
+    if (path.includes('/payment-settings')) return 'Payment Settings';
     return 'Toiral Task Board';
   };
 
@@ -135,6 +143,12 @@ const Layout = () => {
           </div>
           <nav className="flex-1">
             <ul className="space-y-4">
+              {/* Main Section */}
+              <li className="mb-2">
+                <h3 className="text-xs font-semibold text-[#7a7067] uppercase tracking-wider px-4">
+                  Main
+                </h3>
+              </li>
               <li>
                 <NavLink
                   to="/dashboard"
@@ -223,6 +237,78 @@ const Layout = () => {
                   <BarChart3Icon className="h-6 w-6 mr-3" />
                   <span className="text-base">Progress Tracker</span>
                 </NavLink>
+              </li>
+
+              {/* Client Management Section */}
+              <li className="mt-8 mb-2">
+                <h3 className="text-xs font-semibold text-[#7a7067] uppercase tracking-wider px-4">
+                  Client Management
+                </h3>
+              </li>
+              <li>
+                <NavLink
+                  to="/clients"
+                  className={({isActive}) => `
+                    flex items-center p-4 rounded-lg transition-all duration-200
+                    ${isActive
+                      ? 'bg-[#f5f0e8] text-[#3a3226] font-medium shadow-sm border-l-4 border-[#d4a5a5]'
+                      : 'hover:bg-[#f5f0e8]/50 text-[#7a7067] hover:text-[#3a3226]'}
+                  `}
+                >
+                  <Users2Icon className="h-6 w-6 mr-3" />
+                  <span className="text-base">Clients</span>
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/quotations"
+                  className={({isActive}) => `
+                    flex items-center p-4 rounded-lg transition-all duration-200
+                    ${isActive
+                      ? 'bg-[#f5f0e8] text-[#3a3226] font-medium shadow-sm border-l-4 border-[#d4a5a5]'
+                      : 'hover:bg-[#f5f0e8]/50 text-[#7a7067] hover:text-[#3a3226]'}
+                  `}
+                >
+                  <FileTextIcon className="h-6 w-6 mr-3" />
+                  <span className="text-base">Quotations</span>
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/invoices"
+                  className={({isActive}) => `
+                    flex items-center p-4 rounded-lg transition-all duration-200
+                    ${isActive
+                      ? 'bg-[#f5f0e8] text-[#3a3226] font-medium shadow-sm border-l-4 border-[#d4a5a5]'
+                      : 'hover:bg-[#f5f0e8]/50 text-[#7a7067] hover:text-[#3a3226]'}
+                  `}
+                >
+                  <ReceiptIcon className="h-6 w-6 mr-3" />
+                  <span className="text-base">Invoices</span>
+                </NavLink>
+              </li>
+              {isAdmin() && (
+                <li>
+                  <NavLink
+                    to="/payment-settings"
+                    className={({isActive}) => `
+                      flex items-center p-4 rounded-lg transition-all duration-200
+                      ${isActive
+                        ? 'bg-[#f5f0e8] text-[#3a3226] font-medium shadow-sm border-l-4 border-[#d4a5a5]'
+                        : 'hover:bg-[#f5f0e8]/50 text-[#7a7067] hover:text-[#3a3226]'}
+                    `}
+                  >
+                    <CreditCardIcon className="h-6 w-6 mr-3" />
+                    <span className="text-base">Payment Settings</span>
+                  </NavLink>
+                </li>
+              )}
+
+              {/* Admin Section */}
+              <li className="mt-8 mb-2">
+                <h3 className="text-xs font-semibold text-[#7a7067] uppercase tracking-wider px-4">
+                  Administration
+                </h3>
               </li>
               {isAdmin() && (
                 <li>

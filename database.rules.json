@@ -25,6 +25,18 @@
     "leads": {
       ".read": "auth != null",
       ".write": "auth != null"
+    },
+    "quotations": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "invoices": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "clients": {
+      ".read": "auth != null",
+      ".write": "auth != null"
     }
   }
 }

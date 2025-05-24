@@ -1,11 +1,14 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { splitVendorChunkPlugin } from 'vite'
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     react(),
+    // Split vendor chunks for better caching
+    splitVendorChunkPlugin(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
@@ -116,4 +119,50 @@ export default defineConfig({
     })
   ],
   base: './', // Add base path for proper relative paths after deployment
+
+  // Build optimization settings
+  build: {
+    // Generate sourcemaps for better debugging
+    sourcemap: false,
+
+    // Minify the output for smaller bundle size
+    minify: 'terser',
+
+    // Terser options for better minification
+    terserOptions: {
+      compress: {
+        drop_console: true,  // Remove console.log statements
+        drop_debugger: true  // Remove debugger statements
+      }
+    },
+
+    // Chunk size warning limit
+    chunkSizeWarningLimit: 1000,
+
+    // Rollup options
+    rollupOptions: {
+      output: {
+        // Chunk files by type for better caching
+        manualChunks: (id) => {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
+              return 'vendor-react';
+            }
+            if (id.includes('firebase')) {
+              return 'vendor-firebase';
+            }
+            if (id.includes('lucide')) {
+              return 'vendor-ui';
+            }
+            return 'vendor'; // all other node_modules
+          }
+        }
+      }
+    }
+  },
+
+  // Optimize dependencies
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router-dom', 'firebase']
+  }
 })

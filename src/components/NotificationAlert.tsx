@@ -135,24 +135,25 @@ const NotificationAlert: React.FC = () => {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 max-w-sm w-full animate-pulse">
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-[#f5f0e8]">
+    <div className="fixed bottom-4 left-2 right-2 md:left-auto md:right-4 z-50 md:max-w-sm w-auto animate-pulse">
+      <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-[#f5f0e8] max-w-full">
         <div className="p-4">
           <div className="flex items-start">
             <div className={`w-10 h-10 rounded-full ${getTypeColor(currentNotification.type)} flex items-center justify-center mr-3 flex-shrink-0`}>
               <BellIcon className="h-5 w-5" />
             </div>
 
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 overflow-hidden">
               <div className="flex justify-between items-start">
-                <h4 className="text-[#3a3226] font-medium text-base mb-1">
+                <h4 className="text-[#3a3226] font-medium text-base mb-1 break-words pr-2">
                   {currentNotification.title}
                 </h4>
-                <div className="flex items-center ml-2">
+                <div className="flex items-center ml-2 flex-shrink-0">
                   <button
                     onClick={toggleSound}
-                    className="p-1.5 text-[#7a7067] hover:text-[#3a3226] rounded-full hover:bg-[#f5f0e8] transition-colors"
+                    className="p-2 text-[#7a7067] hover:text-[#3a3226] rounded-full hover:bg-[#f5f0e8] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                     title={notificationSettings.soundEnabled ? "Mute notifications" : "Unmute notifications"}
+                    aria-label={notificationSettings.soundEnabled ? "Mute notifications" : "Unmute notifications"}
                   >
                     {notificationSettings.soundEnabled ? (
                       <Volume2Icon className="h-4 w-4" />
@@ -162,14 +163,15 @@ const NotificationAlert: React.FC = () => {
                   </button>
                   <button
                     onClick={handleClose}
-                    className="p-1.5 text-[#7a7067] hover:text-[#3a3226] rounded-full hover:bg-[#f5f0e8] transition-colors"
+                    className="p-2 text-[#7a7067] hover:text-[#3a3226] rounded-full hover:bg-[#f5f0e8] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                     title="Close"
+                    aria-label="Close notification"
                   >
                     <XIcon className="h-4 w-4" />
                   </button>
                 </div>
               </div>
-              <p className="text-[#7a7067] text-sm line-clamp-2">
+              <p className="text-[#7a7067] text-sm line-clamp-2 break-words">
                 {currentNotification.message}
               </p>
             </div>
@@ -178,7 +180,8 @@ const NotificationAlert: React.FC = () => {
 
         <button
           onClick={handleClick}
-          className="w-full p-2 bg-[#f5f0e8] text-[#3a3226] text-sm font-medium hover:bg-[#d4a5a5] hover:text-white transition-colors text-center"
+          className="w-full p-3 bg-[#f5f0e8] text-[#3a3226] text-sm font-medium hover:bg-[#d4a5a5] hover:text-white transition-colors text-center min-h-[44px]"
+          aria-label="View notification details"
         >
           View Notification
         </button>

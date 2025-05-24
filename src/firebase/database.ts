@@ -67,7 +67,29 @@ export const addData = async <T extends object>(path: string, data: T) => {
     // Try to add data directly to Firebase
     const dataRef = ref(database, path);
     const newRef = push(dataRef);
-    await set(newRef, data);
+
+    // Add retry logic for network issues
+    let retries = 0;
+    const maxRetries = 3;
+
+    while (retries < maxRetries) {
+      try {
+        await set(newRef, data);
+        console.log(`Data added successfully to ${path}`);
+        return newRef.key;
+      } catch (setError) {
+        retries++;
+        console.warn(`Attempt ${retries}/${maxRetries} failed. Retrying...`);
+
+        if (retries >= maxRetries) {
+          throw setError;
+        }
+
+        // Wait before retrying (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retries - 1)));
+      }
+    }
+
     return newRef.key;
   } catch (error) {
     // If offline or error occurs, queue the operation
@@ -76,6 +98,7 @@ export const addData = async <T extends object>(path: string, data: T) => {
       offlineDataManager.queueOperation('add', path, data);
       return 'pending-' + Date.now(); // Return a temporary ID
     }
+    console.error(`Error adding data to ${path}:`, error);
     throw error; // Re-throw if it's not an offline issue
   }
 };
@@ -85,13 +108,35 @@ export const updateData = async <T extends object>(path: string, id: string, dat
   try {
     // Try to update data directly in Firebase
     const dataRef = ref(database, `${path}/${id}`);
-    await update(dataRef, data);
+
+    // Add retry logic for network issues
+    let retries = 0;
+    const maxRetries = 3;
+
+    while (retries < maxRetries) {
+      try {
+        await update(dataRef, data);
+        console.log(`Data updated successfully at ${path}/${id}`);
+        return;
+      } catch (updateError) {
+        retries++;
+        console.warn(`Update attempt ${retries}/${maxRetries} failed. Retrying...`);
+
+        if (retries >= maxRetries) {
+          throw updateError;
+        }
+
+        // Wait before retrying (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retries - 1)));
+      }
+    }
   } catch (error) {
     // If offline or error occurs, queue the operation
     if (!navigator.onLine) {
       console.log('Device is offline. Queueing update operation for later.');
       offlineDataManager.queueOperation('update', `${path}/${id}`, data);
     } else {
+      console.error(`Error updating data at ${path}/${id}:`, error);
       throw error; // Re-throw if it's not an offline issue
     }
   }
@@ -137,13 +182,22 @@ export const setNetworkEnabled = async (enabled: boolean) => {
 
 // Generic function to get data once from a specific path
 export const getDataOnce = async <T>(path: string): Promise<T | null> => {
-  const dbRef = ref(database);
-  const snapshot = await get(child(dbRef, path));
+  try {
+    console.log(`Fetching data from path: ${path}`);
+    const dbRef = ref(database);
+    const snapshot = await get(child(dbRef, path));
 
-  if (snapshot.exists()) {
-    return snapshot.val() as T;
-  } else {
-    return null;
+    if (snapshot.exists()) {
+      const data = snapshot.val() as T;
+      console.log(`Data found at ${path}:`, data);
+      return data;
+    } else {
+      console.log(`No data found at path: ${path}`);
+      return null;
+    }
+  } catch (error) {
+    console.error(`Error fetching data from ${path}:`, error);
+    throw error;
   }
 };
 
@@ -155,4 +209,25 @@ export const initializeDatabase = async (defaultData: Record<string, any>) => {
   if (!snapshot.exists()) {
     await set(dbRef, defaultData);
   }
+};
+
+// Listen for changes at a specific path
+export const listenForChanges = <T>(
+  path: string,
+  callback: (data: T | null) => void
+): (() => void) => {
+  const dataRef = ref(database, path);
+
+  const unsubscribe = onValue(dataRef, (snapshot) => {
+    if (snapshot.exists()) {
+      callback(snapshot.val() as T);
+    } else {
+      callback(null);
+    }
+  }, (error) => {
+    console.error(`Error listening for changes at ${path}:`, error);
+    callback(null);
+  });
+
+  return unsubscribe;
 };

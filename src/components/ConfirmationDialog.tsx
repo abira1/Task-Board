@@ -54,7 +54,7 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn">
-      <div className="bg-white rounded-xl w-full max-w-md p-6 shadow-lg animate-scaleIn">
+      <div className="bg-white rounded-xl w-full max-w-md p-6 md:p-8 shadow-lg animate-scaleIn">
         <div className="flex justify-between items-start mb-4">
           <h2 className="font-medium text-xl text-[#3a3226]">{title}</h2>
           <button
@@ -65,11 +65,11 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
           </button>
         </div>
 
-        <div className="flex flex-col items-center mb-6">
-          <div className="mb-4">
+        <div className="flex flex-col items-center mb-8">
+          <div className="mb-5">
             {getIcon()}
           </div>
-          <p className="text-center text-[#3a3226]">{message}</p>
+          <div className="text-center text-[#3a3226] whitespace-pre-line leading-relaxed px-2">{message}</div>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">

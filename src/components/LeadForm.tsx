@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { XIcon } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { XIcon, AlertCircleIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
-import { Lead, NewLead } from '../contexts/LeadContext';
+import { Lead, NewLead, useLeads } from '../contexts/LeadContext';
 
 interface LeadFormProps {
   onClose: () => void;
@@ -19,14 +19,17 @@ const LeadForm: React.FC<LeadFormProps> = ({
 }) => {
   const { user } = useAuth();
   const { addNotification } = useNotifications();
+  const { checkDuplicateLead } = useLeads();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDuplicateChecking, setIsDuplicateChecking] = useState(false);
 
   const [formData, setFormData] = useState<Omit<NewLead, 'handledBy'>>({
     companyName: initialLead?.companyName || '',
     contactPersonName: initialLead?.contactPersonName || '',
     businessType: initialLead?.businessType || '',
     socialMedia: initialLead?.socialMedia || '',
-    contactInfo: initialLead?.contactInfo || '',
+    email: initialLead?.email || initialLead?.contactInfo || '',
+    phoneNumber: initialLead?.phoneNumber || '',
     progress: initialLead?.progress || 'Untouched',
     notes: initialLead?.notes || '',
     location: initialLead?.location || ''
@@ -34,8 +37,64 @@ const LeadForm: React.FC<LeadFormProps> = ({
 
   const [errors, setErrors] = useState({
     companyName: '',
-    contactInfo: ''
+    email: '',
+    phoneNumber: '',
+    contactFields: '' // Error for when both email and phone are empty
   });
+
+  // Track the original values for edit mode
+  const [originalEmail] = useState(initialLead?.email || initialLead?.contactInfo || '');
+  const [originalPhoneNumber] = useState(initialLead?.phoneNumber || '');
+
+  // Check for duplicates when the component mounts (for edit mode)
+  useEffect(() => {
+    if (isEdit) {
+      // Check both email and phone if they exist
+      if (formData.email) {
+        checkForDuplicates('email', formData.email);
+      }
+      if (formData.phoneNumber) {
+        checkForDuplicates('phoneNumber', formData.phoneNumber);
+      }
+    }
+    // We only want this to run once on mount, so we're intentionally
+    // not including dependencies that would cause it to re-run
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Check for duplicates when contact info changes
+  const checkForDuplicates = (fieldName: 'email' | 'phoneNumber', value: string) => {
+    if (!value.trim()) return;
+
+    // Don't check if we're in edit mode and the value hasn't changed
+    if (isEdit) {
+      if (fieldName === 'email' && value === originalEmail) return;
+      if (fieldName === 'phoneNumber' && value === originalPhoneNumber) return;
+    }
+
+    setIsDuplicateChecking(true);
+
+    // Use the appropriate parameters based on which field we're checking
+    const email = fieldName === 'email' ? value : undefined;
+    const phoneNumber = fieldName === 'phoneNumber' ? value : undefined;
+
+    // Use the excludeLeadId parameter in edit mode to exclude the current lead
+    const duplicate = checkDuplicateLead(email, phoneNumber, isEdit ? initialLead?.id : undefined);
+
+    if (duplicate) {
+      setErrors(prev => ({
+        ...prev,
+        [fieldName]: `A lead with this ${fieldName === 'email' ? 'email address' : 'phone number'} already exists (${duplicate.companyName})`
+      }));
+    } else {
+      setErrors(prev => ({
+        ...prev,
+        [fieldName]: ''
+      }));
+    }
+
+    setIsDuplicateChecking(false);
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -51,13 +110,30 @@ const LeadForm: React.FC<LeadFormProps> = ({
         [name]: ''
       }));
     }
+
+    // Clear the contactFields error if either email or phone is being filled
+    if ((name === 'email' || name === 'phoneNumber') && value.trim()) {
+      setErrors(prev => ({
+        ...prev,
+        contactFields: ''
+      }));
+    }
+
+    // Check for duplicates when email or phone changes
+    if (name === 'email' && value.trim()) {
+      checkForDuplicates('email', value);
+    } else if (name === 'phoneNumber' && value.trim()) {
+      checkForDuplicates('phoneNumber', value);
+    }
   };
 
   const validateForm = () => {
     let valid = true;
     const newErrors = {
       companyName: '',
-      contactInfo: ''
+      email: '',
+      phoneNumber: '',
+      contactFields: ''
     };
 
     if (!formData.companyName.trim()) {
@@ -65,9 +141,50 @@ const LeadForm: React.FC<LeadFormProps> = ({
       valid = false;
     }
 
-    if (!formData.contactInfo.trim()) {
-      newErrors.contactInfo = 'Contact information is required';
+    // Check if at least one contact method is provided
+    const hasEmail = formData.email && formData.email.trim() !== '';
+    const hasPhone = formData.phoneNumber && formData.phoneNumber.trim() !== '';
+
+    if (!hasEmail && !hasPhone) {
+      newErrors.contactFields = 'At least one contact method (email or phone) is required';
       valid = false;
+    } else {
+      // Validate email format if provided
+      if (hasEmail) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.email!)) {
+          newErrors.email = 'Please enter a valid email address';
+          valid = false;
+        } else {
+          // Check for duplicate email
+          if (!isEdit || formData.email !== originalEmail) {
+            const duplicate = checkDuplicateLead(formData.email, undefined, isEdit ? initialLead?.id : undefined);
+            if (duplicate) {
+              newErrors.email = `A lead with this email already exists (${duplicate.companyName})`;
+              valid = false;
+            }
+          }
+        }
+      }
+
+      // Validate phone format if provided
+      if (hasPhone) {
+        // Basic phone validation - at least 7 digits
+        const phoneDigits = formData.phoneNumber!.replace(/\D/g, '');
+        if (phoneDigits.length < 7) {
+          newErrors.phoneNumber = 'Please enter a valid phone number';
+          valid = false;
+        } else {
+          // Check for duplicate phone
+          if (!isEdit || formData.phoneNumber !== originalPhoneNumber) {
+            const duplicate = checkDuplicateLead(undefined, formData.phoneNumber, isEdit ? initialLead?.id : undefined);
+            if (duplicate) {
+              newErrors.phoneNumber = `A lead with this phone number already exists (${duplicate.companyName})`;
+              valid = false;
+            }
+          }
+        }
+      }
     }
 
     setErrors(newErrors);
@@ -109,11 +226,40 @@ const LeadForm: React.FC<LeadFormProps> = ({
     } catch (error) {
       console.error('Error saving lead:', error);
 
-      await addNotification({
-        title: 'Error',
-        message: `Failed to ${isEdit ? 'update' : 'add'} lead. Please try again.`,
-        type: 'system'
-      });
+      // Check if it's a duplicate error
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+      if (errorMessage.includes('Duplicate lead')) {
+        // Extract the company name from the error message if possible
+        const companyMatch = errorMessage.match(/\(([^)]+)\)/);
+        const companyName = companyMatch ? companyMatch[1] : '';
+
+        // Determine which field has the duplicate
+        if (errorMessage.includes('email')) {
+          setErrors(prev => ({
+            ...prev,
+            email: `A lead with this email already exists${companyName ? ` (${companyName})` : ''}`
+          }));
+        } else if (errorMessage.includes('phone')) {
+          setErrors(prev => ({
+            ...prev,
+            phoneNumber: `A lead with this phone number already exists${companyName ? ` (${companyName})` : ''}`
+          }));
+        } else {
+          // Generic error if we can't determine which field
+          setErrors(prev => ({
+            ...prev,
+            contactFields: `A lead with this contact information already exists${companyName ? ` (${companyName})` : ''}`
+          }));
+        }
+      } else {
+        // For other errors, show a notification
+        await addNotification({
+          title: 'Error',
+          message: `Failed to ${isEdit ? 'update' : 'add'} lead. Please try again.`,
+          type: 'system'
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -175,6 +321,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
                     <option value="Home Decor Store">Home Decor Store</option>
                     <option value="E-commerce Startup">E-commerce Startup</option>
                     <option value="Real Estate Agency">Real Estate Agency</option>
+                    <option value="Hotel & Resort">Hotel & Resort</option>
                     <option value="Technology">Technology</option>
                     <option value="Healthcare">Healthcare</option>
                     <option value="Education">Education</option>
@@ -185,18 +332,62 @@ const LeadForm: React.FC<LeadFormProps> = ({
 
                 <div className="mb-5">
                   <label className="block text-[#3a3226] text-sm font-medium mb-2">
-                    Contact Info
+                    Email Address <span className="text-[#7a7067] text-xs">(optional if phone provided)</span>
                   </label>
-                  <input
-                    type="text"
-                    name="contactInfo"
-                    value={formData.contactInfo}
-                    onChange={handleChange}
-                    className={`bg-[#f5f0e8] text-[#3a3226] w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 ${errors.contactInfo ? 'border-2 border-[#d4a5a5] focus:ring-[#d4a5a5]' : 'focus:ring-[#d4a5a5]'}`}
-                    placeholder="Enter email or phone number"
-                  />
-                  {errors.contactInfo && <p className="text-[#d4a5a5] text-xs mt-1">{errors.contactInfo}</p>}
+                  <div className="relative">
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email || ''}
+                      onChange={handleChange}
+                      className={`bg-[#f5f0e8] text-[#3a3226] w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 ${errors.email ? 'border-2 border-[#d4a5a5] focus:ring-[#d4a5a5]' : 'focus:ring-[#d4a5a5]'}`}
+                      placeholder="Enter email address"
+                    />
+                    {isDuplicateChecking && (
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <span className="animate-spin inline-block">⏳</span>
+                      </div>
+                    )}
+                  </div>
+                  {errors.email && (
+                    <div className="flex items-start mt-2">
+                      <AlertCircleIcon className="h-4 w-4 text-[#d4a5a5] mt-0.5 mr-1 flex-shrink-0" />
+                      <p className="text-[#d4a5a5] text-xs">{errors.email}</p>
+                    </div>
+                  )}
                 </div>
+
+                <div className="mb-5">
+                  <label className="block text-[#3a3226] text-sm font-medium mb-2">
+                    Phone Number <span className="text-[#7a7067] text-xs">(optional if email provided)</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="tel"
+                      name="phoneNumber"
+                      value={formData.phoneNumber || ''}
+                      onChange={handleChange}
+                      className={`bg-[#f5f0e8] text-[#3a3226] w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 ${errors.phoneNumber ? 'border-2 border-[#d4a5a5] focus:ring-[#d4a5a5]' : 'focus:ring-[#d4a5a5]'}`}
+                      placeholder="Enter phone number"
+                    />
+                  </div>
+                  {errors.phoneNumber && (
+                    <div className="flex items-start mt-2">
+                      <AlertCircleIcon className="h-4 w-4 text-[#d4a5a5] mt-0.5 mr-1 flex-shrink-0" />
+                      <p className="text-[#d4a5a5] text-xs">{errors.phoneNumber}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Error message when both fields are empty */}
+                {errors.contactFields && (
+                  <div className="mb-5 -mt-2">
+                    <div className="flex items-start">
+                      <AlertCircleIcon className="h-4 w-4 text-[#d4a5a5] mt-0.5 mr-1 flex-shrink-0" />
+                      <p className="text-[#d4a5a5] text-xs">{errors.contactFields}</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Right Column */}
