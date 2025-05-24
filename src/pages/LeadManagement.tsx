@@ -5,9 +5,6 @@ import {
   EditIcon,
   Trash2Icon,
   Loader2Icon,
-  CheckCircleIcon,
-  ClockIcon,
-  XCircleIcon,
   LinkIcon,
   XIcon,
   RefreshCwIcon,
@@ -21,19 +18,25 @@ import {
   ChevronUpIcon,
   FilterIcon,
   CalendarIcon,
-  SlidersIcon
+  Users2Icon
 } from 'lucide-react';
 import { useNotifications } from '../contexts/NotificationContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useLeads, Lead } from '../contexts/LeadContext';
+import { useClients } from '../contexts/ClientContext';
 import LeadForm from '../components/LeadForm';
 import Avatar from '../components/Avatar';
 import { debounce } from 'lodash';
+import { useNavigate } from 'react-router-dom';
+import ConfirmationDialog from '../components/ConfirmationDialog';
+import LeadProgressDropdown from '../components/LeadProgressDropdown';
 
 const LeadManagement = () => {
   const { isAdmin, user } = useAuth();
   const { addNotification } = useNotifications();
-  const { leads, addLead, updateLead, removeLead, loading, error, isConnected, refreshLeads } = useLeads();
+  const { leads, addLead, updateLead, updateLeadProgress, removeLead, loading, error, isConnected, refreshLeads } = useLeads();
+  const { convertLeadToClient } = useClients();
+  const navigate = useNavigate();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddLeadModalOpen, setIsAddLeadModalOpen] = useState(false);
@@ -42,6 +45,8 @@ const LeadManagement = () => {
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
   const [expandedLeadId, setExpandedLeadId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isConfirmConvertOpen, setIsConfirmConvertOpen] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
 
   // Filter states
   const [businessTypeFilter, setBusinessTypeFilter] = useState<string>('');
@@ -58,6 +63,7 @@ const LeadManagement = () => {
     'Home Decor Store',
     'E-commerce Startup',
     'Real Estate Agency',
+    'Hotel & Resort',
     'Technology',
     'Healthcare',
     'Education',
@@ -108,7 +114,9 @@ const LeadManagement = () => {
         lead.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         lead.businessType.toLowerCase().includes(searchQuery.toLowerCase()) ||
         lead.contactPersonName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        lead.contactInfo.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (lead.email && lead.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (lead.phoneNumber && lead.phoneNumber.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (lead.contactInfo && lead.contactInfo.toLowerCase().includes(searchQuery.toLowerCase())) ||
         lead.progress.toLowerCase().includes(searchQuery.toLowerCase()) ||
         lead.handledBy.name.toLowerCase().includes(searchQuery.toLowerCase());
 
@@ -180,6 +188,52 @@ const LeadManagement = () => {
 
   const toggleExpandLead = (leadId: string) => {
     setExpandedLeadId(currentId => currentId === leadId ? null : leadId);
+  };
+
+  const handleConvertToClient = (lead: Lead) => {
+    if (lead.progress !== 'Confirm') {
+      addNotification({
+        title: 'Cannot Convert Lead',
+        message: 'Only leads with "Confirm" status can be converted to clients',
+        type: 'system'
+      });
+      return;
+    }
+
+    setSelectedLead(lead);
+    setIsConfirmConvertOpen(true);
+  };
+
+  const confirmConvert = async () => {
+    if (!selectedLead) return;
+
+    setIsConverting(true);
+
+    try {
+      const clientId = await convertLeadToClient(selectedLead);
+
+      if (clientId) {
+        await addNotification({
+          title: 'Lead Converted Successfully',
+          message: `${selectedLead.companyName} has been converted to a client`,
+          type: 'team'
+        });
+
+        // Navigate to the client page
+        navigate('/clients');
+      }
+    } catch (error) {
+      console.error('Error converting lead to client:', error);
+      await addNotification({
+        title: 'Conversion Failed',
+        message: error instanceof Error ? error.message : 'Failed to convert lead to client',
+        type: 'system'
+      });
+    } finally {
+      setIsConverting(false);
+      setIsConfirmConvertOpen(false);
+      setSelectedLead(null);
+    }
   };
 
   // Toggle filters visibility
@@ -259,39 +313,7 @@ const LeadManagement = () => {
     }
   };
 
-  const getProgressColor = (progress: string) => {
-    switch (progress) {
-      case 'Untouched':
-        return 'bg-[#e8f3f1] text-[#7eb8ab]';
-      case 'Knocked':
-        return 'bg-[#f0f0e8] text-[#b8b87e]';
-      case 'In Progress':
-        return 'bg-[#f0f0e8] text-[#b8b87e]';
-      case 'Confirm':
-        return 'bg-[#f5eee8] text-[#d4a5a5]';
-      case 'Canceled':
-        return 'bg-[#f8e8e8] text-[#e57373]';
-      default:
-        return 'bg-[#f5f0e8] text-[#7a7067]';
-    }
-  };
 
-  const getProgressIcon = (progress: string) => {
-    switch (progress) {
-      case 'Untouched':
-        return <XCircleIcon className="h-4 w-4 mr-1" />;
-      case 'Knocked':
-        return <ClockIcon className="h-4 w-4 mr-1" />;
-      case 'In Progress':
-        return <ClockIcon className="h-4 w-4 mr-1" />;
-      case 'Confirm':
-        return <CheckCircleIcon className="h-4 w-4 mr-1" />;
-      case 'Canceled':
-        return <XIcon className="h-4 w-4 mr-1" />;
-      default:
-        return null;
-    }
-  };
 
   return (
     <div>
@@ -573,9 +595,25 @@ const LeadManagement = () => {
                             <span className="text-[#3a3226] text-sm font-medium">
                               {lead.contactPersonName || 'No contact name'}
                             </span>
-                            <span className="text-[#7a7067] text-xs mt-1">
-                              {lead.contactInfo}
-                            </span>
+                            {lead.email && (
+                              <span className="text-[#7a7067] text-xs mt-1 flex items-center">
+                                <MailIcon className="h-3 w-3 mr-1" />
+                                {lead.email}
+                              </span>
+                            )}
+                            {lead.phoneNumber && (
+                              <span className="text-[#7a7067] text-xs mt-1 flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                                </svg>
+                                {lead.phoneNumber}
+                              </span>
+                            )}
+                            {!lead.email && !lead.phoneNumber && lead.contactInfo && (
+                              <span className="text-[#7a7067] text-xs mt-1">
+                                {lead.contactInfo}
+                              </span>
+                            )}
                           </div>
                         </div>
 
@@ -594,12 +632,27 @@ const LeadManagement = () => {
                         </div>
 
                         <div className="col-span-2 flex items-center justify-between">
-                          <span className={`px-2 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full ${getProgressColor(lead.progress)}`}>
-                            {getProgressIcon(lead.progress)}
-                            {lead.progress}
-                          </span>
+                          <LeadProgressDropdown
+                            lead={lead}
+                            onProgressUpdate={updateLeadProgress}
+                          />
 
                           <div className="flex space-x-1" onClick={e => e.stopPropagation()}>
+                            {/* Show convert button for confirmed leads */}
+                            {lead.progress === 'Confirm' && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleConvertToClient(lead);
+                                }}
+                                className="p-2 text-[#7a7067] hover:text-[#3a3226] bg-[#f5f0e8] hover:bg-[#ebe6de] rounded-lg transition-colors"
+                                title="Convert to client"
+                                aria-label="Convert to client"
+                              >
+                                <Users2Icon className="h-4 w-4" />
+                              </button>
+                            )}
+
                             {/* Show edit button if user is admin or creator of the lead */}
                             {(isAdmin() || lead.createdBy?.id === user?.id) && (
                               <button
@@ -688,13 +741,37 @@ const LeadManagement = () => {
                                   <div className="text-[#3a3226] font-medium">{lead.contactPersonName || 'Not specified'}</div>
                                 </div>
 
-                                <div>
-                                  <div className="text-[#7a7067] text-xs mb-1">Contact Info</div>
-                                  <div className="text-[#3a3226] flex items-center">
-                                    <MailIcon className="h-4 w-4 mr-2 text-[#d4a5a5]" />
-                                    {lead.contactInfo}
+                                {lead.email && (
+                                  <div>
+                                    <div className="text-[#7a7067] text-xs mb-1">Email</div>
+                                    <div className="text-[#3a3226] flex items-center">
+                                      <MailIcon className="h-4 w-4 mr-2 text-[#d4a5a5]" />
+                                      {lead.email}
+                                    </div>
                                   </div>
-                                </div>
+                                )}
+
+                                {lead.phoneNumber && (
+                                  <div>
+                                    <div className="text-[#7a7067] text-xs mb-1">Phone</div>
+                                    <div className="text-[#3a3226] flex items-center">
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 text-[#d4a5a5]">
+                                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                                      </svg>
+                                      {lead.phoneNumber}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {!lead.email && !lead.phoneNumber && lead.contactInfo && (
+                                  <div>
+                                    <div className="text-[#7a7067] text-xs mb-1">Contact Info</div>
+                                    <div className="text-[#3a3226] flex items-center">
+                                      <MailIcon className="h-4 w-4 mr-2 text-[#d4a5a5]" />
+                                      {lead.contactInfo}
+                                    </div>
+                                  </div>
+                                )}
 
                                 {lead.socialMedia && (
                                   <div>
@@ -755,10 +832,12 @@ const LeadManagement = () => {
                             </p>
                           )}
                         </div>
-                        <span className={`ml-2 px-2 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full ${getProgressColor(lead.progress)}`}>
-                          {getProgressIcon(lead.progress)}
-                          {lead.progress}
-                        </span>
+                        <div className="ml-2">
+                          <LeadProgressDropdown
+                            lead={lead}
+                            onProgressUpdate={updateLeadProgress}
+                          />
+                        </div>
                       </div>
 
                       <div className="grid grid-cols-1 gap-3 mt-4">
@@ -772,15 +851,43 @@ const LeadManagement = () => {
                           </div>
                         </div>
 
-                        <div className="flex items-center">
-                          <div className="w-8 h-8 bg-[#f5f0e8] rounded-full flex items-center justify-center mr-3">
-                            <MailIcon className="h-4 w-4 text-[#d4a5a5]" />
+                        {lead.email && (
+                          <div className="flex items-center">
+                            <div className="w-8 h-8 bg-[#f5f0e8] rounded-full flex items-center justify-center mr-3">
+                              <MailIcon className="h-4 w-4 text-[#d4a5a5]" />
+                            </div>
+                            <div>
+                              <div className="text-[#7a7067] text-xs">Email</div>
+                              <div className="text-[#3a3226] text-sm break-words">{lead.email}</div>
+                            </div>
                           </div>
-                          <div>
-                            <div className="text-[#7a7067] text-xs">Contact Info</div>
-                            <div className="text-[#3a3226] text-sm break-words">{lead.contactInfo}</div>
+                        )}
+
+                        {lead.phoneNumber && (
+                          <div className="flex items-center">
+                            <div className="w-8 h-8 bg-[#f5f0e8] rounded-full flex items-center justify-center mr-3">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#d4a5a5]">
+                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                              </svg>
+                            </div>
+                            <div>
+                              <div className="text-[#7a7067] text-xs">Phone</div>
+                              <div className="text-[#3a3226] text-sm break-words">{lead.phoneNumber}</div>
+                            </div>
                           </div>
-                        </div>
+                        )}
+
+                        {!lead.email && !lead.phoneNumber && lead.contactInfo && (
+                          <div className="flex items-center">
+                            <div className="w-8 h-8 bg-[#f5f0e8] rounded-full flex items-center justify-center mr-3">
+                              <MailIcon className="h-4 w-4 text-[#d4a5a5]" />
+                            </div>
+                            <div>
+                              <div className="text-[#7a7067] text-xs">Contact Info</div>
+                              <div className="text-[#3a3226] text-sm break-words">{lead.contactInfo}</div>
+                            </div>
+                          </div>
+                        )}
 
                         <div className="flex items-center">
                           <div className="w-8 h-8 bg-[#f5f0e8] rounded-full flex items-center justify-center mr-3">
@@ -821,6 +928,21 @@ const LeadManagement = () => {
                       </button>
 
                       <div className="flex border-l border-[#f5f0e8]">
+                        {/* Show convert button for confirmed leads */}
+                        {lead.progress === 'Confirm' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleConvertToClient(lead);
+                            }}
+                            className="p-3 text-[#7a7067] hover:text-[#3a3226] hover:bg-[#f5f0e8] transition-colors"
+                            title="Convert to client"
+                            aria-label="Convert to client"
+                          >
+                            <Users2Icon className="h-5 w-5" />
+                          </button>
+                        )}
+
                         {/* Show edit button if user is admin or creator of the lead */}
                         {(isAdmin() || lead.createdBy?.id === user?.id) && (
                           <button
@@ -828,7 +950,7 @@ const LeadManagement = () => {
                               e.stopPropagation();
                               handleEditLead(lead);
                             }}
-                            className="p-3 text-[#7a7067] hover:text-[#3a3226] hover:bg-[#f5f0e8] transition-colors"
+                            className="p-3 text-[#7a7067] hover:text-[#3a3226] hover:bg-[#f5f0e8] transition-colors border-l border-[#f5f0e8]"
                             title="Edit lead"
                             aria-label="Edit lead"
                           >
@@ -899,10 +1021,26 @@ const LeadManagement = () => {
                               <div className="text-[#3a3226] text-sm">{lead.contactPersonName || 'Not specified'}</div>
                             </div>
 
-                            <div>
-                              <div className="text-[#7a7067] text-xs">Contact Info</div>
-                              <div className="text-[#3a3226] text-sm">{lead.contactInfo}</div>
-                            </div>
+                            {lead.email && (
+                              <div>
+                                <div className="text-[#7a7067] text-xs">Email</div>
+                                <div className="text-[#3a3226] text-sm">{lead.email}</div>
+                              </div>
+                            )}
+
+                            {lead.phoneNumber && (
+                              <div>
+                                <div className="text-[#7a7067] text-xs">Phone</div>
+                                <div className="text-[#3a3226] text-sm">{lead.phoneNumber}</div>
+                              </div>
+                            )}
+
+                            {!lead.email && !lead.phoneNumber && lead.contactInfo && (
+                              <div>
+                                <div className="text-[#7a7067] text-xs">Contact Info</div>
+                                <div className="text-[#3a3226] text-sm">{lead.contactInfo}</div>
+                              </div>
+                            )}
 
                             {lead.socialMedia && (
                               <div>
@@ -961,73 +1099,28 @@ const LeadManagement = () => {
       )}
 
       {/* Confirm Delete Modal */}
-      {isConfirmDeleteOpen && selectedLead && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 animate-fadeIn">
-          <div className="bg-white rounded-xl w-full max-w-md p-5 md:p-6 shadow-lg animate-scaleIn">
-            <div className="flex items-start mb-5">
-              <div className="bg-[#f5eee8] p-3 rounded-full mr-4 flex-shrink-0">
-                <Trash2Icon className="h-6 w-6 text-[#d4a5a5]" />
-              </div>
-              <div>
-                <h2 className="text-xl text-[#3a3226] font-medium mb-2">Confirm Delete</h2>
-                <p className="text-[#7a7067]">
-                  Are you sure you want to delete the lead for <span className="font-medium text-[#3a3226]">{selectedLead.companyName}</span>?
-                </p>
-                <p className="text-[#d4a5a5] text-sm mt-2 font-medium">
-                  This action cannot be undone.
-                </p>
-              </div>
-              <button
-                onClick={() => !isDeleting && setIsConfirmDeleteOpen(false)}
-                disabled={isDeleting}
-                className="ml-auto w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#f5f0e8] text-[#7a7067] disabled:opacity-50"
-                aria-label="Close dialog"
-              >
-                <XIcon className="h-5 w-5" />
-              </button>
-            </div>
+      <ConfirmationDialog
+        isOpen={isConfirmDeleteOpen}
+        onClose={() => setIsConfirmDeleteOpen(false)}
+        onConfirm={confirmDelete}
+        title="Delete Lead"
+        message={`Are you sure you want to delete the lead for ${selectedLead?.companyName}? This action cannot be undone.`}
+        confirmText={isDeleting ? "Deleting..." : "Delete Lead"}
+        cancelText="Cancel"
+        type="danger"
+      />
 
-            <div className="mt-2 p-4 bg-[#f9f6f1] rounded-lg mb-5">
-              <div className="flex items-center mb-2">
-                <span className="text-[#7a7067] w-24 flex-shrink-0 text-sm">Company:</span>
-                <span className="text-[#3a3226] font-medium">{selectedLead.companyName}</span>
-              </div>
-              <div className="flex items-center mb-2">
-                <span className="text-[#7a7067] w-24 flex-shrink-0 text-sm">Contact:</span>
-                <span className="text-[#3a3226]">{selectedLead.contactPersonName || 'N/A'}</span>
-              </div>
-              <div className="flex items-center">
-                <span className="text-[#7a7067] w-24 flex-shrink-0 text-sm">Contact Info:</span>
-                <span className="text-[#3a3226]">{selectedLead.contactInfo}</span>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
-              <button
-                onClick={() => !isDeleting && setIsConfirmDeleteOpen(false)}
-                disabled={isDeleting}
-                className="px-4 py-3 text-[#7a7067] bg-[#f5f0e8] rounded-lg w-full sm:w-auto order-2 sm:order-1 hover:bg-[#ebe6de] transition-colors disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDelete}
-                disabled={isDeleting}
-                className="px-4 py-3 bg-[#d4a5a5] text-white rounded-lg w-full sm:w-auto order-1 sm:order-2 hover:bg-[#c99595] transition-colors disabled:opacity-50 flex items-center justify-center"
-              >
-                {isDeleting ? (
-                  <>
-                    <Loader2Icon className="h-4 w-4 mr-2 animate-spin" />
-                    Deleting...
-                  </>
-                ) : (
-                  'Delete Lead'
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Confirm Convert Modal */}
+      <ConfirmationDialog
+        isOpen={isConfirmConvertOpen}
+        onClose={() => setIsConfirmConvertOpen(false)}
+        onConfirm={confirmConvert}
+        title="Convert to Client"
+        message={`Are you sure you want to convert ${selectedLead?.companyName} to a client? This will create a new client record based on this lead's information.`}
+        confirmText={isConverting ? "Converting..." : "Convert to Client"}
+        cancelText="Cancel"
+        type="info"
+      />
     </div>
   );
 };

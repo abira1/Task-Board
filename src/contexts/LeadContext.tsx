@@ -4,6 +4,7 @@ import { defaultLeads } from '../firebase/initData';
 import { useAuth } from './AuthContext';
 import { database } from '../firebase/config';
 import { ref, onDisconnect, serverTimestamp, onValue, set } from 'firebase/database';
+import { standardizeContactInfo } from '../utils/contactUtils';
 
 export interface Lead {
   id: string;
@@ -11,7 +12,9 @@ export interface Lead {
   contactPersonName?: string;
   businessType: string;
   socialMedia?: string;
-  contactInfo: string;
+  email?: string;
+  phoneNumber?: string;
+  contactInfo?: string; // Kept for backward compatibility with existing data
   progress: 'Untouched' | 'Knocked' | 'In Progress' | 'Confirm' | 'Canceled';
   handledBy: {
     name: string;
@@ -33,7 +36,9 @@ interface LeadContextType {
   leads: Lead[];
   addLead: (lead: NewLead) => Promise<void>;
   updateLead: (id: string, lead: Partial<Lead>) => Promise<void>;
+  updateLeadProgress: (id: string, progress: Lead['progress']) => Promise<void>;
   removeLead: (id: string) => Promise<any>;
+  checkDuplicateLead: (email?: string, phoneNumber?: string, excludeLeadId?: string) => Lead | null;
   loading: boolean;
   error: string | null;
   isConnected: boolean;
@@ -160,6 +165,52 @@ export const LeadProvider: React.FC<{
     };
   }, []);
 
+  // Check if a lead with the same email or phone number already exists
+  const checkDuplicateLead = (email?: string, phoneNumber?: string, excludeLeadId?: string): Lead | null => {
+    // If both email and phone are empty, no need to check
+    if (!email && !phoneNumber) return null;
+
+    // Standardize inputs
+    const standardizedEmail = email ? email.toLowerCase().trim() : '';
+    const standardizedPhone = phoneNumber ? phoneNumber.replace(/\D/g, '') : '';
+
+    return leads.find(lead => {
+      // Skip the lead being edited (if provided)
+      if (excludeLeadId && lead.id === excludeLeadId) return false;
+
+      // For backward compatibility, check the contactInfo field as well
+      const leadEmail = lead.email ? lead.email.toLowerCase().trim() : '';
+      const leadPhone = lead.phoneNumber ? lead.phoneNumber.replace(/\D/g, '') : '';
+      const leadContactInfo = lead.contactInfo ? standardizeContactInfo(lead.contactInfo) : '';
+
+      // Check if either email or phone matches
+      if (standardizedEmail && leadEmail && standardizedEmail === leadEmail) {
+        return true;
+      }
+
+      if (standardizedPhone && leadPhone && standardizedPhone === leadPhone) {
+        return true;
+      }
+
+      // Backward compatibility check with contactInfo field
+      if (lead.contactInfo) {
+        // If contactInfo looks like an email and we're checking an email
+        if (standardizedEmail && leadContactInfo.includes('@') &&
+            leadContactInfo === standardizedEmail) {
+          return true;
+        }
+
+        // If contactInfo looks like a phone number and we're checking a phone
+        if (standardizedPhone && !leadContactInfo.includes('@') &&
+            leadContactInfo.replace(/\D/g, '') === standardizedPhone) {
+          return true;
+        }
+      }
+
+      return false;
+    }) || null;
+  };
+
   const addLead = async (lead: NewLead) => {
     try {
       // All users can add leads
@@ -167,9 +218,26 @@ export const LeadProvider: React.FC<{
         throw new Error('User not authenticated');
       }
 
+      // Check for duplicates before adding
+      const duplicate = checkDuplicateLead(lead.email, lead.phoneNumber);
+      if (duplicate) {
+        const fieldType =
+          (lead.email && duplicate.email?.toLowerCase() === lead.email.toLowerCase()) ? 'email' : 'phone number';
+        throw new Error(`Duplicate lead: A lead with this ${fieldType} already exists (${duplicate.companyName})`);
+      }
+
+      // For backward compatibility, also set contactInfo field
+      let contactInfoValue = '';
+      if (lead.email) {
+        contactInfoValue = lead.email;
+      } else if (lead.phoneNumber) {
+        contactInfoValue = lead.phoneNumber;
+      }
+
       const timestamp = new Date().toISOString();
       const newLead = {
         ...lead,
+        contactInfo: contactInfoValue, // Set for backward compatibility
         createdAt: timestamp,
         createdBy: {
           id: user.id,
@@ -180,6 +248,38 @@ export const LeadProvider: React.FC<{
       await addData('leads', newLead);
     } catch (error) {
       console.error('Error adding lead:', error);
+      throw error;
+    }
+  };
+
+  const updateLeadProgress = async (id: string, progress: Lead['progress']) => {
+    try {
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Get the current lead
+      const currentLeadData = leads.find(l => l.id === id);
+
+      if (!currentLeadData) {
+        throw new Error('Lead not found');
+      }
+
+      // Any authenticated user can update lead progress
+      // Update the handledBy field to reflect who made the progress change
+      const updatedHandledBy = {
+        name: user.name || 'Unknown User',
+        avatar: user.avatar || ''
+      };
+
+      const updatePayload = {
+        progress,
+        handledBy: updatedHandledBy
+      };
+
+      await updateData('leads', id, updatePayload);
+    } catch (error) {
+      console.error('Error updating lead progress:', error);
       throw error;
     }
   };
@@ -204,7 +304,44 @@ export const LeadProvider: React.FC<{
         throw new Error('Permission denied: You can only edit leads you created');
       }
 
-      await updateData('leads', id, lead);
+      // Check for duplicates if email or phone is being updated
+      const isEmailChanged = lead.email !== undefined && lead.email !== currentLeadData.email;
+      const isPhoneChanged = lead.phoneNumber !== undefined && lead.phoneNumber !== currentLeadData.phoneNumber;
+
+      if (isEmailChanged || isPhoneChanged) {
+        // Get the values to check (use current values for fields not being updated)
+        const emailToCheck = isEmailChanged ? lead.email : currentLeadData.email;
+        const phoneToCheck = isPhoneChanged ? lead.phoneNumber : currentLeadData.phoneNumber;
+
+        const duplicate = checkDuplicateLead(emailToCheck, phoneToCheck, id);
+        if (duplicate) {
+          const fieldType =
+            (isEmailChanged && duplicate.email?.toLowerCase() === emailToCheck?.toLowerCase()) ? 'email' : 'phone number';
+          throw new Error(`Duplicate lead: A lead with this ${fieldType} already exists (${duplicate.companyName})`);
+        }
+      }
+
+      // For backward compatibility, also update contactInfo field
+      let updatedLead = { ...lead };
+
+      if (isEmailChanged || isPhoneChanged) {
+        // Determine the new contactInfo value
+        let contactInfoValue = '';
+
+        // Use the new values if provided, otherwise use the existing ones
+        const newEmail = lead.email !== undefined ? lead.email : currentLeadData.email;
+        const newPhone = lead.phoneNumber !== undefined ? lead.phoneNumber : currentLeadData.phoneNumber;
+
+        if (newEmail) {
+          contactInfoValue = newEmail;
+        } else if (newPhone) {
+          contactInfoValue = newPhone;
+        }
+
+        updatedLead.contactInfo = contactInfoValue;
+      }
+
+      await updateData('leads', id, updatedLead);
     } catch (error) {
       console.error('Error updating lead:', error);
       throw error;
@@ -249,7 +386,9 @@ export const LeadProvider: React.FC<{
       leads,
       addLead,
       updateLead,
+      updateLeadProgress,
       removeLead,
+      checkDuplicateLead,
       loading,
       error,
       isConnected,
