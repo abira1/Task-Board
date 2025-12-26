@@ -5,6 +5,17 @@ export default {
 ],
   theme: {
     extend: {
+      spacing: {
+        'safe-top': 'env(safe-area-inset-top)',
+        'safe-bottom': 'env(safe-area-inset-bottom)',
+        'safe-left': 'env(safe-area-inset-left)',
+        'safe-right': 'env(safe-area-inset-right)',
+      },
+      fontSize: {
+        'xs-mobile': ['0.688rem', { lineHeight: '1rem' }],
+        'sm-mobile': ['0.813rem', { lineHeight: '1.25rem' }],
+        'base-mobile': ['0.875rem', { lineHeight: '1.375rem' }],
+      },
       keyframes: {
         dropdown: {
           '0%': { opacity: 0, transform: 'scale(0.95)' },
