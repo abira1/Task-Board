@@ -2,6 +2,7 @@ import React from 'react';
 import { XIcon, CheckIcon, DownloadIcon, AlertCircleIcon } from 'lucide-react';
 import { OperatingSystem, getOperatingSystemName } from '../utils/platformDetection';
 import { getPlatformInstructions } from '../utils/shortcutGenerator';
+import { GooeyLoader } from './ui/loader-10';
 
 interface InstallationModalProps {
   isOpen: boolean;
