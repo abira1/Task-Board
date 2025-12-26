@@ -362,34 +362,34 @@ const Dashboard = () => {
       </section>
       {/* Recent Activity */}
       <section>
-        <div className="flex justify-between items-center mb-4 md:mb-6">
-          <h2 className="font-['Caveat',_cursive] text-xl md:text-2xl text-[#3a3226]">
+        <div className="flex justify-between items-center mb-3 md:mb-6">
+          <h2 className="font-['Caveat',_cursive] text-lg md:text-2xl text-[#3a3226] compact-mobile">
             Recent Activity
           </h2>
-          <Link to="/notifications" className="text-[#d4a5a5] font-medium text-sm md:text-base">View all</Link>
+          <Link to="/notifications" className="text-[#d4a5a5] font-medium text-xs md:text-base compact-mobile">View all</Link>
         </div>
 
         {recentActivity.length === 0 ? (
           // Empty state
-          <div className="bg-white rounded-xl p-5 md:p-6 text-center shadow-sm">
-            <p className="text-[#7a7067]">No recent activity</p>
+          <div className="bg-white rounded-lg md:rounded-xl p-4 md:p-6 text-center shadow-sm">
+            <p className="text-[#7a7067] text-xs md:text-base compact-mobile">No recent activity</p>
           </div>
         ) : (
-          <div className="space-y-3 md:space-y-4">
+          <div className="space-y-2 md:space-y-4">
             {recentActivity.map(activity => {
               // Determine icon based on notification type
               const getActivityIcon = (type: string) => {
                 switch (type) {
                   case 'task':
-                    return <CheckCircleIcon className="h-5 w-5 text-[#7eb8ab]" />;
+                    return <CheckCircleIcon className="h-4 w-4 md:h-5 md:w-5 text-[#7eb8ab]" />;
                   case 'event':
-                    return <CalendarIcon className="h-5 w-5 text-[#d4a5a5]" />;
+                    return <CalendarIcon className="h-4 w-4 md:h-5 md:w-5 text-[#d4a5a5]" />;
                   case 'team':
-                    return <UsersIcon className="h-5 w-5 text-[#8ca3d8]" />;
+                    return <UsersIcon className="h-4 w-4 md:h-5 md:w-5 text-[#8ca3d8]" />;
                   case 'system':
-                    return <AlertCircleIcon className="h-5 w-5 text-[#b8b87e]" />;
+                    return <AlertCircleIcon className="h-4 w-4 md:h-5 md:w-5 text-[#b8b87e]" />;
                   default:
-                    return <TrendingUpIcon className="h-5 w-5 text-[#8ca3d8]" />;
+                    return <TrendingUpIcon className="h-4 w-4 md:h-5 md:w-5 text-[#8ca3d8]" />;
                 }
               };
 
@@ -410,15 +410,15 @@ const Dashboard = () => {
               };
 
               return (
-                <div key={activity.id} className="bg-white rounded-xl p-4 flex items-start md:items-center shadow-sm">
-                  <div className={`w-10 h-10 rounded-full ${getActivityBg(activity.type)} flex items-center justify-center mr-3 md:mr-4 flex-shrink-0`}>
+                <div key={activity.id} className="bg-white rounded-lg md:rounded-xl p-3 md:p-4 flex items-start md:items-center shadow-sm">
+                  <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full ${getActivityBg(activity.type)} flex items-center justify-center mr-2 md:mr-4 flex-shrink-0`}>
                     {getActivityIcon(activity.type)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[#3a3226] font-medium text-sm md:text-base truncate">{activity.title}</p>
-                    <p className="text-[#7a7067] text-xs md:text-sm line-clamp-2">{activity.message}</p>
+                    <p className="text-[#3a3226] font-medium text-xs md:text-base truncate compact-mobile">{activity.title}</p>
+                    <p className="text-[#7a7067] text-[10px] md:text-sm line-clamp-2 compact-mobile">{activity.message}</p>
                   </div>
-                  <p className="text-[#7a7067] text-xs md:text-sm ml-2 whitespace-nowrap flex-shrink-0">
+                  <p className="text-[#7a7067] text-[10px] md:text-sm ml-2 whitespace-nowrap flex-shrink-0 compact-mobile">
                     {formatRelativeTime(activity.timestamp)}
                   </p>
                 </div>
