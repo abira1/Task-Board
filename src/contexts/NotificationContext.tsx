@@ -47,32 +47,6 @@ export const NotificationProvider: React.FC<{
   const [hasNewNotifications, setHasNewNotifications] = useState(false);
   const previousNotificationsRef = useRef<Notification[]>([]);
 
-  // Load notification settings from localStorage or use defaults
-  const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>(() => {
-    const savedSettings = localStorage.getItem('notificationSettings');
-    return savedSettings
-      ? JSON.parse(savedSettings)
-      : { soundEnabled: true, volume: 0.5 };
-  });
-
-  // Save notification settings to localStorage when they change
-  useEffect(() => {
-    localStorage.setItem('notificationSettings', JSON.stringify(notificationSettings));
-  }, [notificationSettings]);
-
-  // Update notification settings
-  const updateNotificationSettings = (settings: Partial<NotificationSettings>) => {
-    setNotificationSettings(prev => {
-      const newSettings = { ...prev, ...settings };
-      return newSettings;
-    });
-  };
-
-  // Toggle sound on/off
-  const toggleSound = () => {
-    updateNotificationSettings({ soundEnabled: !notificationSettings.soundEnabled });
-  };
-
   // Fetch notifications from Firebase
   useEffect(() => {
     // Set loading to true initially
