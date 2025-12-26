@@ -675,12 +675,6 @@ const TaskBoard = () => {
 
     } catch (error) {
       console.error('Error adding comment:', error);
-
-      await addNotification({
-        title: 'Error',
-        message: 'Failed to add comment. Please try again.',
-        type: 'system'
-      });
     }
   };
   return <div>
