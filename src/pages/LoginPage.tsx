@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2Icon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { GooeyLoader } from '../components/ui/loader-10';
 
 const LoginPage = () => {
   const [error, setError] = useState('');
@@ -67,10 +67,10 @@ const LoginPage = () => {
             className="w-full flex items-center justify-center bg-white border border-[#e0d6c8] text-[#3a3226] font-medium py-4 rounded-lg hover:bg-[#f5f0e8] transition-colors disabled:opacity-70"
           >
             {isLoggingIn ? (
-              <>
-                <Loader2Icon className="w-5 h-5 mr-2 animate-spin" />
-                Signing in...
-              </>
+              <div className="flex items-center gap-2">
+                <GooeyLoader size="small" />
+                <span>Signing in...</span>
+              </div>
             ) : (
               <>
                 <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -90,11 +90,9 @@ const LoginPage = () => {
 
       {loading && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-xl shadow-md">
-            <div className="flex items-center">
-              <Loader2Icon className="h-5 w-5 text-[#d4a5a5] animate-spin mr-3" />
-              <p className="text-[#3a3226]">Loading your account...</p>
-            </div>
+          <div className="bg-white p-6 rounded-xl shadow-md flex flex-col items-center gap-4">
+            <GooeyLoader size="medium" />
+            <p className="text-[#3a3226]">Loading your account...</p>
           </div>
         </div>
       )}

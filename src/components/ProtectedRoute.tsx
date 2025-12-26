@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Loader2Icon } from 'lucide-react';
+import { GooeyLoader } from './ui/loader-10';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -26,8 +26,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   if (loading) {
     return (
       <div className="fixed inset-0 bg-[#f5f0e8] flex items-center justify-center">
-        <div className="flex items-center">
-          <Loader2Icon className="h-6 w-6 text-[#d4a5a5] animate-spin mr-3" />
+        <div className="flex flex-col items-center gap-4">
+          <GooeyLoader size="medium" />
           <p className="text-[#3a3226] text-lg">Loading...</p>
         </div>
       </div>

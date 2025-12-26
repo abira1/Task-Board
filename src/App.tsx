@@ -8,6 +8,7 @@ import Layout from './components/Layout';
 import NetworkStatus from './components/NetworkStatus';
 import InstallPrompt from './components/InstallPrompt';
 import PreloadResources from './components/PreloadResources';
+import { GooeyLoader } from './components/ui/loader-10';
 
 // Use React.lazy for code splitting to improve initial load time
 const LoginPage = lazy(() => import('./pages/LoginPage'));
@@ -48,10 +49,10 @@ export function App() {
     };
   }, []);
 
-  // Loading spinner component for Suspense fallback
-  const LoadingSpinner = () => (
+  // Loading component for Suspense fallback
+  const LoadingFallback = () => (
     <div className="flex justify-center items-center h-screen bg-[#f5f0e8]">
-      <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-[#d4a5a5]"></div>
+      <GooeyLoader size="medium" />
     </div>
   );
 
@@ -62,7 +63,7 @@ export function App() {
           <Router>
             {/* Preload critical resources */}
             <PreloadResources />
-            <Suspense fallback={<LoadingSpinner />}>
+            <Suspense fallback={<LoadingFallback />}>
               <Routes>
                 <Route path="/" element={<LoginPage />} />
                 <Route path="/download" element={<DownloadPage />} />
