@@ -56,6 +56,16 @@ interface Task {
     timestamp: string;
   }; // Information about who locked the progress
 }
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: 'admin' | 'team_member';
+  avatar: string;
+  approvalStatus: 'pending' | 'approved' | 'rejected';
+}
+
 const TaskBoard = () => {
   const {
     isAdmin,
@@ -68,6 +78,7 @@ const TaskBoard = () => {
   const navigate = useNavigate();
 
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState<(Task & {
     progress?: number;
