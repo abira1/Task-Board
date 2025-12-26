@@ -41,8 +41,6 @@ const LeadManagement = () => {
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
   const [expandedLeadId, setExpandedLeadId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isConfirmConvertOpen, setIsConfirmConvertOpen] = useState(false);
-  const [isConverting, setIsConverting] = useState(false);
 
   // Filter states
   const [businessTypeFilter, setBusinessTypeFilter] = useState<string>('');
