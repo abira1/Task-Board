@@ -229,66 +229,66 @@ const Dashboard = () => {
       {/* Stats Section */}
       <section>
         {/* Mobile Stats Carousel */}
-        <div className="overflow-x-auto pb-4 md:hidden">
-          <div className="flex space-x-4 min-w-max px-1">
+        <div className="overflow-x-auto pb-3 md:hidden -mx-3 px-3">
+          <div className="flex space-x-3 min-w-max">
             {loading.tasks ? (
               // Loading skeleton for mobile stats
               <>
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="bg-white rounded-xl p-5 w-[200px] animate-pulse">
-                    <div className="flex items-center mb-3">
-                      <div className="w-10 h-10 rounded-full bg-[#f5f0e8] mr-3"></div>
-                      <div className="h-4 bg-[#f5f0e8] rounded w-24"></div>
+                  <div key={i} className="bg-white rounded-lg p-3 w-[160px] animate-pulse shadow-sm">
+                    <div className="flex items-center mb-2">
+                      <div className="w-8 h-8 rounded-full bg-[#f5f0e8] mr-2"></div>
+                      <div className="h-3 bg-[#f5f0e8] rounded w-16"></div>
                     </div>
-                    <div className="h-8 bg-[#f5f0e8] rounded w-16 mb-2"></div>
-                    <div className="h-3 bg-[#f5f0e8] rounded w-32"></div>
+                    <div className="h-6 bg-[#f5f0e8] rounded w-12 mb-1"></div>
+                    <div className="h-2 bg-[#f5f0e8] rounded w-20"></div>
                   </div>
                 ))}
               </>
             ) : (
               <>
-                <div className="bg-white rounded-xl p-5 w-[200px] shadow-sm">
-                  <div className="flex items-center mb-3">
-                    <div className="w-10 h-10 rounded-full bg-[#e8f3f1] flex items-center justify-center mr-3">
-                      <CheckCircleIcon className="h-5 w-5 text-[#7eb8ab]" />
+                <div className="bg-white rounded-lg p-3 w-[160px] shadow-sm">
+                  <div className="flex items-center mb-2">
+                    <div className="w-8 h-8 rounded-full bg-[#e8f3f1] flex items-center justify-center mr-2">
+                      <CheckCircleIcon className="h-4 w-4 text-[#7eb8ab]" />
                     </div>
-                    <h3 className="text-[#3a3226] font-medium">Completed</h3>
+                    <h3 className="text-[#3a3226] font-medium text-xs compact-mobile">Completed</h3>
                   </div>
-                  <p className="text-3xl font-bold text-[#3a3226]">{stats.completed}</p>
-                  <p className="text-[#7a7067] text-sm mt-1">Tasks completed</p>
+                  <p className="text-2xl font-bold text-[#3a3226]">{stats.completed}</p>
+                  <p className="text-[#7a7067] text-[10px] mt-0.5 compact-mobile">Tasks completed</p>
                 </div>
 
-                <div className="bg-white rounded-xl p-5 w-[200px] shadow-sm">
-                  <div className="flex items-center mb-3">
-                    <div className="w-10 h-10 rounded-full bg-[#f5eee8] flex items-center justify-center mr-3">
-                      <ClockIcon className="h-5 w-5 text-[#d4a5a5]" />
+                <div className="bg-white rounded-lg p-3 w-[160px] shadow-sm">
+                  <div className="flex items-center mb-2">
+                    <div className="w-8 h-8 rounded-full bg-[#f5eee8] flex items-center justify-center mr-2">
+                      <ClockIcon className="h-4 w-4 text-[#d4a5a5]" />
                     </div>
-                    <h3 className="text-[#3a3226] font-medium">In Progress</h3>
+                    <h3 className="text-[#3a3226] font-medium text-xs compact-mobile">In Progress</h3>
                   </div>
-                  <p className="text-3xl font-bold text-[#3a3226]">{stats.inProgress}</p>
-                  <p className="text-[#7a7067] text-sm mt-1">Tasks in progress</p>
+                  <p className="text-2xl font-bold text-[#3a3226]">{stats.inProgress}</p>
+                  <p className="text-[#7a7067] text-[10px] mt-0.5 compact-mobile">Tasks in progress</p>
                 </div>
 
-                <div className="bg-white rounded-xl p-5 w-[200px] shadow-sm">
-                  <div className="flex items-center mb-3">
-                    <div className="w-10 h-10 rounded-full bg-[#e8ecf3] flex items-center justify-center mr-3">
-                      <AlertCircleIcon className="h-5 w-5 text-[#8ca3d8]" />
+                <div className="bg-white rounded-lg p-3 w-[160px] shadow-sm">
+                  <div className="flex items-center mb-2">
+                    <div className="w-8 h-8 rounded-full bg-[#e8ecf3] flex items-center justify-center mr-2">
+                      <AlertCircleIcon className="h-4 w-4 text-[#8ca3d8]" />
                     </div>
-                    <h3 className="text-[#3a3226] font-medium">Upcoming</h3>
+                    <h3 className="text-[#3a3226] font-medium text-xs compact-mobile">Upcoming</h3>
                   </div>
-                  <p className="text-3xl font-bold text-[#3a3226]">{stats.upcoming}</p>
-                  <p className="text-[#7a7067] text-sm mt-1">Tasks due soon</p>
+                  <p className="text-2xl font-bold text-[#3a3226]">{stats.upcoming}</p>
+                  <p className="text-[#7a7067] text-[10px] mt-0.5 compact-mobile">Tasks due soon</p>
                 </div>
 
-                <div className="bg-white rounded-xl p-5 w-[200px] shadow-sm">
-                  <div className="flex items-center mb-3">
-                    <div className="w-10 h-10 rounded-full bg-[#f0f0e8] flex items-center justify-center mr-3">
-                      <BarChart3Icon className="h-5 w-5 text-[#b8b87e]" />
+                <div className="bg-white rounded-lg p-3 w-[160px] shadow-sm">
+                  <div className="flex items-center mb-2">
+                    <div className="w-8 h-8 rounded-full bg-[#f0f0e8] flex items-center justify-center mr-2">
+                      <BarChart3Icon className="h-4 w-4 text-[#b8b87e]" />
                     </div>
-                    <h3 className="text-[#3a3226] font-medium">Productivity</h3>
+                    <h3 className="text-[#3a3226] font-medium text-xs compact-mobile">Productivity</h3>
                   </div>
-                  <p className="text-3xl font-bold text-[#3a3226]">{stats.productivity}%</p>
-                  <p className="text-[#7a7067] text-sm mt-1">Completion rate</p>
+                  <p className="text-2xl font-bold text-[#3a3226]">{stats.productivity}%</p>
+                  <p className="text-[#7a7067] text-[10px] mt-0.5 compact-mobile">Completion rate</p>
                 </div>
               </>
             )}
