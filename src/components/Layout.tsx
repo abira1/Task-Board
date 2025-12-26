@@ -119,12 +119,12 @@ const Layout = () => {
       {/* Sidebar */}
       <aside
         id="sidebar"
-        className={`fixed z-40 h-full w-[280px] sm:w-[320px] md:w-64 bg-white shadow-lg transition-all duration-300 ease-in-out transform ${
+        className={`fixed z-40 h-full w-[260px] sm:w-[280px] md:w-64 bg-white shadow-lg transition-all duration-300 ease-in-out transform ${
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-        } pt-16 md:pt-0 overflow-hidden`}
+        } pt-14 md:pt-0 overflow-hidden`}
       >
-        <div className="p-6 flex flex-col h-full overflow-y-auto overscroll-contain">
-          <div className="mb-10 hidden md:block">
+        <div className="p-4 md:p-6 flex flex-col h-full overflow-y-auto overscroll-contain">
+          <div className="mb-6 md:mb-10 hidden md:block">
             <img
               src="https://i.postimg.cc/L8dT1dnX/Toiral-Task-Board-Logo.png"
               alt="Toiral Task Board"
@@ -132,10 +132,10 @@ const Layout = () => {
             />
           </div>
           <nav className="flex-1">
-            <ul className="space-y-4">
+            <ul className="space-y-2 md:space-y-4">
               {/* Main Section */}
-              <li className="mb-2">
-                <h3 className="text-xs font-semibold text-[#7a7067] uppercase tracking-wider px-4">
+              <li className="mb-1 md:mb-2">
+                <h3 className="text-[10px] md:text-xs font-semibold text-[#7a7067] uppercase tracking-wider px-3 md:px-4 compact-mobile">
                   Main
                 </h3>
               </li>
@@ -143,59 +143,59 @@ const Layout = () => {
                 <NavLink
                   to="/dashboard"
                   className={({isActive}) => `
-                    flex items-center p-4 rounded-lg transition-all duration-200
+                    flex items-center p-3 md:p-4 rounded-lg transition-all duration-200
                     ${isActive
                       ? 'bg-[#f5f0e8] text-[#3a3226] font-medium shadow-sm border-l-4 border-[#d4a5a5]'
                       : 'hover:bg-[#f5f0e8]/50 text-[#7a7067] hover:text-[#3a3226]'}
                   `}
                 >
-                  <LayoutDashboardIcon className="h-6 w-6 mr-3" />
-                  <span className="text-base">Dashboard</span>
+                  <LayoutDashboardIcon className="h-5 w-5 md:h-6 md:w-6 mr-2 md:mr-3" />
+                  <span className="text-sm md:text-base">Dashboard</span>
                 </NavLink>
               </li>
               <li>
                 <NavLink
                   to="/taskboard"
                   className={({isActive}) => `
-                    flex items-center p-4 rounded-lg transition-all duration-200
+                    flex items-center p-3 md:p-4 rounded-lg transition-all duration-200
                     ${isActive
                       ? 'bg-[#f5f0e8] text-[#3a3226] font-medium shadow-sm border-l-4 border-[#d4a5a5]'
                       : 'hover:bg-[#f5f0e8]/50 text-[#7a7067] hover:text-[#3a3226]'}
                   `}
                 >
-                  <ClipboardListIcon className="h-6 w-6 mr-3" />
-                  <span className="text-base">Task Board</span>
+                  <ClipboardListIcon className="h-5 w-5 md:h-6 md:w-6 mr-2 md:mr-3" />
+                  <span className="text-sm md:text-base">Task Board</span>
                 </NavLink>
               </li>
               <li>
                 <NavLink
                   to="/calendar"
                   className={({isActive}) => `
-                    flex items-center p-4 rounded-lg transition-all duration-200
+                    flex items-center p-3 md:p-4 rounded-lg transition-all duration-200
                     ${isActive
                       ? 'bg-[#f5f0e8] text-[#3a3226] font-medium shadow-sm border-l-4 border-[#d4a5a5]'
                       : 'hover:bg-[#f5f0e8]/50 text-[#7a7067] hover:text-[#3a3226]'}
                   `}
                 >
-                  <CalendarIcon className="h-6 w-6 mr-3" />
-                  <span className="text-base">Calendar</span>
+                  <CalendarIcon className="h-5 w-5 md:h-6 md:w-6 mr-2 md:mr-3" />
+                  <span className="text-sm md:text-base">Calendar</span>
                 </NavLink>
               </li>
               <li>
                 <NavLink
                   to="/notifications"
                   className={({isActive}) => `
-                    flex items-center p-4 rounded-lg transition-all duration-200
+                    flex items-center p-3 md:p-4 rounded-lg transition-all duration-200
                     ${isActive
                       ? 'bg-[#f5f0e8] text-[#3a3226] font-medium shadow-sm border-l-4 border-[#d4a5a5]'
                       : 'hover:bg-[#f5f0e8]/50 text-[#7a7067] hover:text-[#3a3226]'}
                   `}
                 >
-                  <BellIcon className="h-6 w-6 mr-3" />
-                  <span className="text-base">Notifications</span>
+                  <BellIcon className="h-5 w-5 md:h-6 md:w-6 mr-2 md:mr-3" />
+                  <span className="text-sm md:text-base">Notifications</span>
                   {unseenCount > 0 && (
-                    <span className="ml-2 px-2 py-1 bg-[#d4a5a5] text-white text-xs rounded-full flex items-center justify-center min-w-[24px] animate-pulse">
-                      {unseenCount}
+                    <span className="ml-2 px-2 py-0.5 bg-[#d4a5a5] text-white text-[10px] md:text-xs rounded-full flex items-center justify-center min-w-[20px] md:min-w-[24px] animate-pulse font-medium">
+                      {unseenCount > 9 ? '9+' : unseenCount}
                     </span>
                   )}
                 </NavLink>
@@ -204,34 +204,34 @@ const Layout = () => {
                 <NavLink
                   to="/leads"
                   className={({isActive}) => `
-                    flex items-center p-4 rounded-lg transition-all duration-200
+                    flex items-center p-3 md:p-4 rounded-lg transition-all duration-200
                     ${isActive
                       ? 'bg-[#f5f0e8] text-[#3a3226] font-medium shadow-sm border-l-4 border-[#d4a5a5]'
                       : 'hover:bg-[#f5f0e8]/50 text-[#7a7067] hover:text-[#3a3226]'}
                   `}
                 >
-                  <BuildingIcon className="h-6 w-6 mr-3" />
-                  <span className="text-base">Lead Management</span>
+                  <BuildingIcon className="h-5 w-5 md:h-6 md:w-6 mr-2 md:mr-3" />
+                  <span className="text-sm md:text-base">Lead Management</span>
                 </NavLink>
               </li>
               <li>
                 <NavLink
                   to="/progress"
                   className={({isActive}) => `
-                    flex items-center p-4 rounded-lg transition-all duration-200
+                    flex items-center p-3 md:p-4 rounded-lg transition-all duration-200
                     ${isActive
                       ? 'bg-[#f5f0e8] text-[#3a3226] font-medium shadow-sm border-l-4 border-[#d4a5a5]'
                       : 'hover:bg-[#f5f0e8]/50 text-[#7a7067] hover:text-[#3a3226]'}
                   `}
                 >
-                  <BarChart3Icon className="h-6 w-6 mr-3" />
-                  <span className="text-base">Progress Tracker</span>
+                  <BarChart3Icon className="h-5 w-5 md:h-6 md:w-6 mr-2 md:mr-3" />
+                  <span className="text-sm md:text-base">Progress Tracker</span>
                 </NavLink>
               </li>
 
               {/* Admin Section */}
-              <li className="mt-8 mb-2">
-                <h3 className="text-xs font-semibold text-[#7a7067] uppercase tracking-wider px-4">
+              <li className="mt-6 md:mt-8 mb-1 md:mb-2">
+                <h3 className="text-[10px] md:text-xs font-semibold text-[#7a7067] uppercase tracking-wider px-3 md:px-4 compact-mobile">
                   Administration
                 </h3>
               </li>
@@ -240,33 +240,33 @@ const Layout = () => {
                   <NavLink
                     to="/team"
                     className={({isActive}) => `
-                      flex items-center p-4 rounded-lg transition-all duration-200
+                      flex items-center p-3 md:p-4 rounded-lg transition-all duration-200
                       ${isActive
                         ? 'bg-[#f5f0e8] text-[#3a3226] font-medium shadow-sm border-l-4 border-[#d4a5a5]'
                         : 'hover:bg-[#f5f0e8]/50 text-[#7a7067] hover:text-[#3a3226]'}
                     `}
                   >
-                    <UsersIcon className="h-6 w-6 mr-3" />
-                    <span className="text-base">Team Management</span>
+                    <UsersIcon className="h-5 w-5 md:h-6 md:w-6 mr-2 md:mr-3" />
+                    <span className="text-sm md:text-base">Team Management</span>
                   </NavLink>
                 </li>
               )}
             </ul>
           </nav>
-          <div className="mt-auto pt-4">
-            <div className="p-4 border-t border-[#f5f0e8]">
+          <div className="mt-auto pt-3 md:pt-4">
+            <div className="p-3 md:p-4 border-t border-[#f5f0e8]">
               <div className="flex items-center">
                 <Avatar
                   src={user?.avatar}
                   alt={user?.name}
                   size="sm"
-                  className="mr-3"
+                  className="mr-2 md:mr-3 w-8 h-8"
                 />
                 <div>
-                  <p className="text-sm font-medium text-[#3a3226]">
+                  <p className="text-xs md:text-sm font-medium text-[#3a3226] truncate">
                     {user?.name}
                   </p>
-                  <p className="text-xs text-[#7a7067] capitalize">
+                  <p className="text-[10px] md:text-xs text-[#7a7067] capitalize compact-mobile">
                     {user?.role.replace('_', ' ')}
                   </p>
                 </div>
@@ -276,17 +276,17 @@ const Layout = () => {
             <NavLink
               to="/"
               onClick={logout}
-              className="flex items-center p-4 rounded-lg text-[#7a7067] hover:bg-[#f5f0e8]/50 hover:text-[#3a3226] transition-all duration-200"
+              className="flex items-center p-3 md:p-4 rounded-lg text-[#7a7067] hover:bg-[#f5f0e8]/50 hover:text-[#3a3226] transition-all duration-200"
             >
-              <LogOutIcon className="h-6 w-6 mr-3" />
-              <span className="text-base">Logout</span>
+              <LogOutIcon className="h-5 w-5 md:h-6 md:w-6 mr-2 md:mr-3" />
+              <span className="text-sm md:text-base">Logout</span>
             </NavLink>
           </div>
         </div>
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 pt-16 md:pt-6 p-4 sm:p-6 md:p-10 md:ml-64 overflow-y-auto transition-all duration-300">
+      <main className="flex-1 pt-14 md:pt-6 p-3 sm:p-4 md:p-10 md:ml-64 overflow-y-auto transition-all duration-300">
         <Outlet />
         {user && <NotificationAlert />}
       </main>
