@@ -84,16 +84,16 @@ const Layout = () => {
       )}
 
       {/* Mobile header */}
-      <div className="fixed top-0 left-0 right-0 h-16 bg-white shadow-md z-20 md:hidden flex items-center px-4">
+      <div className="fixed top-0 left-0 right-0 h-14 md:h-16 bg-white shadow-md z-20 md:hidden flex items-center px-3">
         <button
           id="menu-button"
-          className="w-12 h-12 flex items-center justify-center rounded-full hover:bg-[#f5f0e8] active:bg-[#f5f0e8] transition-all duration-200 mr-2 border border-transparent hover:border-[#f5f0e8]"
+          className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-[#f5f0e8] active:bg-[#f5f0e8] transition-all duration-200 mr-2 border border-transparent hover:border-[#f5f0e8]"
           onClick={toggleSidebar}
           aria-label={isSidebarOpen ? "Close menu" : "Open menu"}
         >
           {isSidebarOpen ?
-            <XIcon className="h-6 w-6 text-[#3a3226]" /> :
-            <MenuIcon className="h-6 w-6 text-[#3a3226]" />
+            <XIcon className="h-5 w-5 text-[#3a3226]" /> :
+            <MenuIcon className="h-5 w-5 text-[#3a3226]" />
           }
         </button>
         <div className="flex items-center justify-center flex-1">
@@ -101,16 +101,16 @@ const Layout = () => {
             <img
               src="https://i.postimg.cc/L8dT1dnX/Toiral-Task-Board-Logo.png"
               alt="Toiral Task Board"
-              className="h-8"
+              className="h-6"
             />
-            <span className="text-xs font-medium text-[#7a7067] mt-1">{getCurrentPageTitle()}</span>
+            <span className="text-[10px] font-medium text-[#7a7067] mt-0.5 compact-mobile">{getCurrentPageTitle()}</span>
           </div>
         </div>
-        <NavLink to="/notifications" className="w-12 h-12 flex items-center justify-center relative rounded-full hover:bg-[#f5f0e8] active:bg-[#f5f0e8] transition-all duration-200 border border-transparent hover:border-[#f5f0e8]">
-          <BellIcon className="h-6 w-6 text-[#7a7067]" />
+        <NavLink to="/notifications" className="w-10 h-10 flex items-center justify-center relative rounded-full hover:bg-[#f5f0e8] active:bg-[#f5f0e8] transition-all duration-200 border border-transparent hover:border-[#f5f0e8]">
+          <BellIcon className="h-5 w-5 text-[#7a7067]" />
           {unseenCount > 0 && (
-            <span className="absolute top-2 right-2 w-5 h-5 bg-[#d4a5a5] text-white text-xs rounded-full flex items-center justify-center animate-pulse">
-              {unseenCount}
+            <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-[#d4a5a5] text-white text-[10px] rounded-full flex items-center justify-center animate-pulse font-medium">
+              {unseenCount > 9 ? '9+' : unseenCount}
             </span>
           )}
         </NavLink>
