@@ -962,16 +962,44 @@ const TaskBoard = () => {
 
                         {/* Task footer */}
                         <div className="flex flex-wrap justify-between items-center gap-3 mt-auto pt-3 border-t border-[#f5f0e8]">
-                          <div className="flex items-center">
-                            <Avatar
-                              src={task.assignee.avatar}
-                              alt={task.assignee.name}
-                              size="xs"
-                              className="mr-2 border border-[#d4a5a5]/20"
-                            />
-                            <span className={`text-xs font-medium ${getPriorityColor(task.priority)}`}>
-                              {task.priority} Priority
-                            </span>
+                          <div className="flex items-center gap-2">
+                            {/* Show multiple assignees if available */}
+                            {task.assignees && task.assignees.length > 1 ? (
+                              <div className="flex items-center">
+                                <div className="flex -space-x-2">
+                                  {task.assignees.slice(0, 3).map((assignee, index) => (
+                                    <Avatar
+                                      key={index}
+                                      src={assignee.avatar}
+                                      alt={assignee.name}
+                                      size="xs"
+                                      className="border-2 border-white"
+                                    />
+                                  ))}
+                                </div>
+                                {task.assignees.length > 3 && (
+                                  <span className="ml-2 text-xs text-[#7a7067] bg-[#f5f0e8] px-2 py-1 rounded-full">
+                                    +{task.assignees.length - 3}
+                                  </span>
+                                )}
+                                <span className={`ml-2 text-xs font-medium ${getPriorityColor(task.priority)}`}>
+                                  {task.priority} Priority
+                                </span>
+                              </div>
+                            ) : (
+                              // Show single assignee
+                              <>
+                                <Avatar
+                                  src={task.assignee.avatar}
+                                  alt={task.assignee.name}
+                                  size="xs"
+                                  className="border border-[#d4a5a5]/20"
+                                />
+                                <span className={`text-xs font-medium ${getPriorityColor(task.priority)}`}>
+                                  {task.priority} Priority
+                                </span>
+                              </>
+                            )}
                           </div>
                           {task.dueDate && (
                             <span className="text-xs text-[#7a7067] bg-[#f5f0e8]/30 px-2 py-1 rounded-lg border border-[#f5f0e8]">
