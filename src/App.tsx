@@ -59,85 +59,56 @@ export function App() {
     <AuthProvider>
       <NotificationProvider>
         <LeadProvider>
-          <ClientProvider>
-            <QuotationProvider>
-              <InvoiceProvider>
-                <PaymentProvider>
-                  <ServiceProvider>
-                  <Router>
-                    {/* Preload critical resources */}
-                    <PreloadResources />
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <Routes>
-                        <Route path="/" element={<LoginPage />} />
-                        <Route path="/download" element={<DownloadPage />} />
-                        <Route path="/pending-approval" element={
-                          <ProtectedRoute requiresApproval={false}>
-                            <PendingApproval />
-                          </ProtectedRoute>
-                        } />
-                        <Route element={
-                          <ProtectedRoute>
-                            <Layout />
-                          </ProtectedRoute>
-                        }>
-                          <Route path="/dashboard" element={<Dashboard />} />
-                          <Route path="/taskboard" element={<TaskBoard />} />
-                          <Route path="/notifications" element={<NotificationsPage />} />
-                          <Route path="/team" element={
-                            <ProtectedRoute requiresAdmin>
-                              <TeamManagement />
-                            </ProtectedRoute>
-                          } />
-                          <Route path="/progress" element={<ProgressTracker />} />
-                          <Route path="/calendar" element={<CalendarView />} />
-                          <Route path="/leads" element={<LeadManagement />} />
+          <Router>
+            {/* Preload critical resources */}
+            <PreloadResources />
+            <Suspense fallback={<LoadingSpinner />}>
+              <Routes>
+                <Route path="/" element={<LoginPage />} />
+                <Route path="/download" element={<DownloadPage />} />
+                <Route path="/pending-approval" element={
+                  <ProtectedRoute requiresApproval={false}>
+                    <PendingApproval />
+                  </ProtectedRoute>
+                } />
+                <Route element={
+                  <ProtectedRoute>
+                    <Layout />
+                  </ProtectedRoute>
+                }>
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/taskboard" element={<TaskBoard />} />
+                  <Route path="/notifications" element={<NotificationsPage />} />
+                  <Route path="/team" element={
+                    <ProtectedRoute requiresAdmin>
+                      <TeamManagement />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/progress" element={<ProgressTracker />} />
+                  <Route path="/calendar" element={<CalendarView />} />
+                  <Route path="/leads" element={<LeadManagement />} />
+                </Route>
+              </Routes>
+            </Suspense>
 
-                          {/* Client Management Routes */}
-                          <Route path="/clients" element={<ClientManagement />} />
-                          <Route path="/quotations" element={<QuotationManagement />} />
-                          <Route path="/quotations/new" element={<QuotationEditor />} />
-                          <Route path="/quotations/:id" element={<QuotationEditor />} />
-                          <Route path="/invoices" element={<InvoiceManagement />} />
-                          <Route path="/invoices/new" element={<InvoiceEditor />} />
-                          <Route path="/invoices/:id" element={<InvoiceEditor />} />
-                          <Route path="/payment-settings" element={
-                            <ProtectedRoute requiresAdmin>
-                              <PaymentSettings />
-                            </ProtectedRoute>
-                          } />
-                          <Route path="/services" element={
-                            <ProtectedRoute requiresAdmin>
-                              <ServiceManagement />
-                            </ProtectedRoute>
-                          } />
-                        </Route>
-                      </Routes>
-                    </Suspense>
+            {/* PWA Components */}
+            <NetworkStatus />
+            <InstallPrompt />
 
-                    {/* PWA Components */}
-                    <NetworkStatus />
-                    <InstallPrompt />
+            {/* Offline Ready Message */}
+            {offlineReady && (
+              <div className="fixed bottom-0 left-0 right-0 bg-[#3a3226] text-white p-2 text-center text-sm z-50">
+                App is ready for offline use
+              </div>
+            )}
 
-                    {/* Offline Ready Message */}
-                    {offlineReady && (
-                      <div className="fixed bottom-0 left-0 right-0 bg-[#3a3226] text-white p-2 text-center text-sm z-50">
-                        App is ready for offline use
-                      </div>
-                    )}
-
-                    {/* Update Available Message */}
-                    {isUpdateAvailable && (
-                      <div className="fixed bottom-0 left-0 right-0 bg-[#d4a5a5] text-white p-2 text-center text-sm z-50">
-                        New version available. Refresh to update.
-                      </div>
-                    )}
-                  </Router>
-                  </ServiceProvider>
-                </PaymentProvider>
-              </InvoiceProvider>
-            </QuotationProvider>
-          </ClientProvider>
+            {/* Update Available Message */}
+            {isUpdateAvailable && (
+              <div className="fixed bottom-0 left-0 right-0 bg-[#d4a5a5] text-white p-2 text-center text-sm z-50">
+                New version available. Refresh to update.
+              </div>
+            )}
+          </Router>
         </LeadProvider>
       </NotificationProvider>
     </AuthProvider>
