@@ -572,7 +572,33 @@ const TaskForm: React.FC<TaskFormProps> = ({
 
               <div>
                 <label className="block text-[#3a3226] text-sm font-medium mb-2">
-                  Assignee
+                  Assignment Type
+                </label>
+                <div className="flex gap-4 mb-3">
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="radio"
+                      value="single"
+                      checked={assignmentMode === 'single'}
+                      onChange={() => setAssignmentMode('single')}
+                      className="mr-2 w-4 h-4 text-[#d4a5a5] focus:ring-[#d4a5a5]"
+                    />
+                    <span className="text-sm text-[#3a3226]">Single Member</span>
+                  </label>
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="radio"
+                      value="multiple"
+                      checked={assignmentMode === 'multiple'}
+                      onChange={() => setAssignmentMode('multiple')}
+                      className="mr-2 w-4 h-4 text-[#d4a5a5] focus:ring-[#d4a5a5]"
+                    />
+                    <span className="text-sm text-[#3a3226]">Multiple Members</span>
+                  </label>
+                </div>
+
+                <label className="block text-[#3a3226] text-sm font-medium mb-2">
+                  {assignmentMode === 'single' ? 'Assignee' : 'Select Team Members'}
                 </label>
 
                 {/* Loading State */}
@@ -598,46 +624,105 @@ const TaskForm: React.FC<TaskFormProps> = ({
                         <UserIcon className="h-5 w-5 mr-2" />
                         <span>No team members available. Task will be unassigned.</span>
                       </div>
+                    ) : assignmentMode === 'single' ? (
+                      // Single Assignment Mode
+                      <>
+                        <select
+                          value={assignee}
+                          onChange={e => setAssignee(e.target.value)}
+                          className="bg-[#f5f0e8] text-[#3a3226] w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d4a5a5]"
+                          required={teamMembers.length > 0}
+                        >
+                          <option value="">Select assignee</option>
+                          {teamMembers.map(member => (
+                            <option key={member.id} value={member.name}>
+                              {member.name} {member.role === 'admin' ? '(Admin)' : ''}
+                            </option>
+                          ))}
+                        </select>
+
+                        {/* Selected Assignee Preview */}
+                        {selectedMember && (
+                          <div className="flex items-center p-3 bg-white rounded-lg mt-2">
+                            <Avatar
+                              src={selectedMember.avatar}
+                              alt={selectedMember.name}
+                              size="md"
+                              className="mr-3"
+                            />
+                            <div>
+                              <p className="text-[#3a3226] font-medium">{selectedMember.name}</p>
+                              <p className="text-xs text-[#7a7067] capitalize flex items-center">
+                                {selectedMember.role === 'admin' ? (
+                                  <>
+                                    <span className="inline-block w-2 h-2 rounded-full bg-[#d4a5a5] mr-1"></span>
+                                    Administrator
+                                  </>
+                                ) : (
+                                  <>
+                                    <span className="inline-block w-2 h-2 rounded-full bg-[#7a7067] mr-1"></span>
+                                    Team Member
+                                  </>
+                                )}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </>
                     ) : (
-                      <select
-                        value={assignee}
-                        onChange={e => setAssignee(e.target.value)}
-                        className="bg-[#f5f0e8] text-[#3a3226] w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d4a5a5]"
-                        required={teamMembers.length > 0}
-                      >
-                        <option value="">Select assignee</option>
+                      // Multiple Assignment Mode
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
                         {teamMembers.map(member => (
-                          <option key={member.id} value={member.name}>
-                            {member.name} {member.role === 'admin' ? '(Admin)' : ''}
-                          </option>
+                          <label
+                            key={member.id}
+                            className="flex items-center p-3 bg-white rounded-lg border border-[#f5f0e8] active:bg-[#f5f0e8]/50 cursor-pointer"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedAssignees.includes(member.name)}
+                              onChange={() => toggleAssigneeSelection(member.name)}
+                              className="mr-3 w-4 h-4 text-[#d4a5a5] focus:ring-[#d4a5a5] rounded"
+                            />
+                            <Avatar
+                              src={member.avatar}
+                              alt={member.name}
+                              size="sm"
+                              className="mr-3"
+                            />
+                            <div className="flex-1">
+                              <p className="text-[#3a3226] font-medium text-sm">
+                                {member.name}
+                              </p>
+                              <p className="text-xs text-[#7a7067]">
+                                {member.role === 'admin' ? 'Administrator' : 'Team Member'}
+                              </p>
+                            </div>
+                          </label>
                         ))}
-                      </select>
+                      </div>
                     )}
 
-                    {/* Selected Assignee Preview */}
-                    {selectedMember && (
-                      <div className="flex items-center p-3 bg-white rounded-lg mt-2">
-                        <Avatar
-                          src={selectedMember.avatar}
-                          alt={selectedMember.name}
-                          size="md"
-                          className="mr-3"
-                        />
-                        <div>
-                          <p className="text-[#3a3226] font-medium">{selectedMember.name}</p>
-                          <p className="text-xs text-[#7a7067] capitalize flex items-center">
-                            {selectedMember.role === 'admin' ? (
-                              <>
-                                <span className="inline-block w-2 h-2 rounded-full bg-[#d4a5a5] mr-1"></span>
-                                Administrator
-                              </>
-                            ) : (
-                              <>
-                                <span className="inline-block w-2 h-2 rounded-full bg-[#7a7067] mr-1"></span>
-                                Team Member
-                              </>
-                            )}
-                          </p>
+                    {/* Selected Assignees Preview for Multiple Mode */}
+                    {assignmentMode === 'multiple' && selectedAssignees.length > 0 && (
+                      <div className="mt-3 p-3 bg-white rounded-lg border border-[#f5f0e8]">
+                        <p className="text-sm font-medium text-[#3a3226] mb-2">
+                          Selected: {selectedAssignees.length} member{selectedAssignees.length !== 1 ? 's' : ''}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedAssignees.map(name => {
+                            const member = teamMembers.find(m => m.name === name);
+                            return member ? (
+                              <div key={name} className="flex items-center bg-[#f5f0e8] px-2 py-1 rounded-lg">
+                                <Avatar
+                                  src={member.avatar}
+                                  alt={member.name}
+                                  size="xs"
+                                  className="mr-1"
+                                />
+                                <span className="text-xs text-[#3a3226]">{member.name}</span>
+                              </div>
+                            ) : null;
+                          })}
                         </div>
                       </div>
                     )}
