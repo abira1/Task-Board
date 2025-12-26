@@ -353,8 +353,8 @@ const TaskForm: React.FC<TaskFormProps> = ({
 
                       {/* Loading State */}
                       {loadingTeamMembers ? (
-                        <div className="bg-white text-[#3a3226] w-full px-4 py-3 rounded-lg border border-[#f5f0e8] flex items-center justify-center">
-                          <Loader2Icon className="h-5 w-5 text-[#d4a5a5] animate-spin mr-2" />
+                        <div className="bg-white text-[#3a3226] w-full px-4 py-3 rounded-lg border border-[#f5f0e8] flex flex-col items-center justify-center gap-2">
+                          <GooeyLoader size="small" />
                           <span>Loading team members...</span>
                         </div>
                       ) : teamMemberError ? (
