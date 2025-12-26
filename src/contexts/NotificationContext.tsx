@@ -274,10 +274,7 @@ export const NotificationProvider: React.FC<{
     unseenCount,
     loading,
     hasNewNotifications,
-    clearNewNotificationsFlag,
-    notificationSettings,
-    updateNotificationSettings,
-    toggleSound
+    clearNewNotificationsFlag
   }}>
       {children}
     </NotificationContext.Provider>;
