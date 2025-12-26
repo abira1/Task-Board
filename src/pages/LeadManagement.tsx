@@ -33,8 +33,6 @@ const LeadManagement = () => {
   const { isAdmin, user } = useAuth();
   const { addNotification } = useNotifications();
   const { leads, addLead, updateLead, updateLeadProgress, removeLead, loading, error, isConnected, refreshLeads } = useLeads();
-  const { convertLeadToClient } = useClients();
-  const navigate = useNavigate();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddLeadModalOpen, setIsAddLeadModalOpen] = useState(false);
