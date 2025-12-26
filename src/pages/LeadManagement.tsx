@@ -1067,17 +1067,6 @@ const LeadManagement = () => {
         type="danger"
       />
 
-      {/* Confirm Convert Modal */}
-      <ConfirmationDialog
-        isOpen={isConfirmConvertOpen}
-        onClose={() => setIsConfirmConvertOpen(false)}
-        onConfirm={confirmConvert}
-        title="Convert to Client"
-        message={`Are you sure you want to convert ${selectedLead?.companyName} to a client? This will create a new client record based on this lead's information.`}
-        confirmText={isConverting ? "Converting..." : "Convert to Client"}
-        cancelText="Cancel"
-        type="info"
-      />
     </div>
   );
 };
