@@ -185,49 +185,12 @@ const LeadManagement = () => {
   };
 
   const handleConvertToClient = (lead: Lead) => {
-    if (lead.progress !== 'Confirm') {
-      addNotification({
-        title: 'Cannot Convert Lead',
-        message: 'Only leads with "Confirm" status can be converted to clients',
-        type: 'system'
-      });
-      return;
-    }
-
-    setSelectedLead(lead);
-    setIsConfirmConvertOpen(true);
-  };
-
-  const confirmConvert = async () => {
-    if (!selectedLead) return;
-
-    setIsConverting(true);
-
-    try {
-      const clientId = await convertLeadToClient(selectedLead);
-
-      if (clientId) {
-        await addNotification({
-          title: 'Lead Converted Successfully',
-          message: `${selectedLead.companyName} has been converted to a client`,
-          type: 'team'
-        });
-
-        // Navigate to the client page
-        navigate('/clients');
-      }
-    } catch (error) {
-      console.error('Error converting lead to client:', error);
-      await addNotification({
-        title: 'Conversion Failed',
-        message: error instanceof Error ? error.message : 'Failed to convert lead to client',
-        type: 'system'
-      });
-    } finally {
-      setIsConverting(false);
-      setIsConfirmConvertOpen(false);
-      setSelectedLead(null);
-    }
+    // Client Management feature is currently not available
+    addNotification({
+      title: 'Feature Not Available',
+      message: 'Client Management feature is currently not available',
+      type: 'system'
+    });
   };
 
   // Toggle filters visibility
