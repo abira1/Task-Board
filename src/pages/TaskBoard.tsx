@@ -1162,19 +1162,39 @@ const TaskBoard = () => {
                   <div className="bg-[#f5f0e8]/30 rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow">
                     <h4 className="text-[#3a3226] font-medium text-sm uppercase tracking-wider mb-3 flex items-center">
                       <UserIcon className="h-4 w-4 mr-2 text-[#d4a5a5]" />
-                      Assignment
+                      {selectedTask.assignees && selectedTask.assignees.length > 1 ? 'Assigned To (Multiple)' : 'Assignment'}
                     </h4>
-                    <div className="flex items-center p-3 bg-white rounded-lg border border-[#f5f0e8] min-h-[44px]">
-                      <Avatar
-                        src={selectedTask.assignee.avatar}
-                        alt={selectedTask.assignee.name}
-                        size="md"
-                        className="mr-3 border-2 border-[#d4a5a5]"
-                      />
-                      <div>
-                        <p className="text-[#3a3226] font-medium">{selectedTask.assignee.name}</p>
+                    {selectedTask.assignees && selectedTask.assignees.length > 1 ? (
+                      // Show multiple assignees
+                      <div className="space-y-2">
+                        {selectedTask.assignees.map((assignee, index) => (
+                          <div key={index} className="flex items-center p-2 bg-white rounded-lg border border-[#f5f0e8]">
+                            <Avatar
+                              src={assignee.avatar}
+                              alt={assignee.name}
+                              size="sm"
+                              className="mr-3 border border-[#d4a5a5]"
+                            />
+                            <div>
+                              <p className="text-[#3a3226] font-medium text-sm">{assignee.name}</p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    </div>
+                    ) : (
+                      // Show single assignee
+                      <div className="flex items-center p-3 bg-white rounded-lg border border-[#f5f0e8] min-h-[44px]">
+                        <Avatar
+                          src={selectedTask.assignee.avatar}
+                          alt={selectedTask.assignee.name}
+                          size="md"
+                          className="mr-3 border-2 border-[#d4a5a5]"
+                        />
+                        <div>
+                          <p className="text-[#3a3226] font-medium">{selectedTask.assignee.name}</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Progress Section - Optimized */}
