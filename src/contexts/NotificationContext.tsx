@@ -76,8 +76,13 @@ export const NotificationProvider: React.FC<{
                 seenBy: notification.seenBy || {}
               }));
 
+              // Filter notifications - show only those for current user or without targetUserId
+              const userNotifications = normalizedData.filter(notification => 
+                !notification.targetUserId || notification.targetUserId === user.id
+              );
+
               // Sort notifications by timestamp (newest first)
-              const sortedData = [...normalizedData].sort((a, b) => {
+              const sortedData = [...userNotifications].sort((a, b) => {
                 const timeA = b.timestamp ? new Date(b.timestamp).getTime() : 0;
                 const timeB = a.timestamp ? new Date(a.timestamp).getTime() : 0;
                 return timeA - timeB;
