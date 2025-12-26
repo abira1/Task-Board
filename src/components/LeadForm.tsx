@@ -487,10 +487,10 @@ const LeadForm: React.FC<LeadFormProps> = ({
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
-                  <>
-                    <span className="animate-spin mr-2">⏳</span>
-                    {isEdit ? 'Saving...' : 'Adding...'}
-                  </>
+                  <div className="flex items-center gap-2">
+                    <GooeyLoader size="small" />
+                    <span>{isEdit ? 'Saving...' : 'Adding...'}</span>
+                  </div>
                 ) : (
                   isEdit ? 'Save Changes' : 'Add Lead'
                 )}
