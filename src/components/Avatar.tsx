@@ -136,7 +136,9 @@ const Avatar: React.FC<AvatarProps> = ({
     <div className={`${sizeClasses[size]} rounded-full overflow-hidden ${className} relative`}>
       {isLoading && (
         <div className={`absolute inset-0 ${bgColorClass} flex items-center justify-center`}>
-          <div className="w-1/2 h-1/2 rounded-full border-2 border-[#d4a5a5] border-t-transparent animate-spin"></div>
+          <div className="scale-50">
+            <GooeyLoader size="small" />
+          </div>
         </div>
       )}
       <img
