@@ -19,6 +19,7 @@
   "dependencies": {
     "@types/html2canvas": "^0.5.35",
     "@types/lodash": "^4.17.16",
+    "clsx": "^2.1.1",
     "firebase": "^11.7.1",
     "html2canvas": "^1.4.1",
     "jspdf": "^3.0.1",
@@ -29,7 +30,8 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.26.2",
-    "react-to-print": "^3.1.0"
+    "react-to-print": "^3.1.0",
+    "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.18",
