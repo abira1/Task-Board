@@ -424,11 +424,7 @@ const TaskBoard = () => {
     if (task.progress === boundedProgress) return;
 
     if (!canUpdateProgress(task)) {
-      await addNotification({
-        title: 'Access Denied',
-        message: 'You can only update progress on tasks assigned to you',
-        type: 'system'
-      });
+      // Silently return - no notification needed
       return;
     }
 
@@ -485,13 +481,6 @@ const TaskBoard = () => {
 
       // Update task in Firebase
       await updateData('tasks', taskId, updateObject);
-
-      // Notify on progress state changes
-      await addNotification({
-        title: 'Progress Updated',
-        message: `${task.title} is now ${getProgressStateLabel(newProgressState)}`,
-        type: 'task'
-      });
 
       // Update the selected task's progress if it's open
       if (selectedTask && selectedTask.id === taskId) {
