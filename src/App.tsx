@@ -20,13 +20,6 @@ const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
 const LeadManagement = lazy(() => import('./pages/LeadManagement'));
 const ProgressTracker = lazy(() => import('./pages/ProgressTracker'));
 const DownloadPage = lazy(() => import('./pages/DownloadPage'));
-const ClientManagement = lazy(() => import('./pages/ClientManagement'));
-const QuotationManagement = lazy(() => import('./pages/QuotationManagement'));
-const QuotationEditor = lazy(() => import('./pages/QuotationEditor'));
-const InvoiceManagement = lazy(() => import('./pages/InvoiceManagement'));
-const InvoiceEditor = lazy(() => import('./pages/InvoiceEditor'));
-const PaymentSettings = lazy(() => import('./pages/PaymentSettings'));
-const ServiceManagement = lazy(() => import('./pages/ServiceManagement'));
 
 export function App() {
   const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
