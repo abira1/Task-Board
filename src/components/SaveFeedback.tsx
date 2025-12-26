@@ -54,7 +54,7 @@ const SaveFeedback: React.FC<SaveFeedbackProps> = ({
   switch (status) {
     case 'saving':
       displayMessage = message || 'Saving...';
-      icon = <Loader2Icon className="h-5 w-5 text-[#d4a5a5] animate-spin" />;
+      icon = <GooeyLoader size="small" />;
       break;
     case 'success':
       bgColor = 'bg-green-50';
