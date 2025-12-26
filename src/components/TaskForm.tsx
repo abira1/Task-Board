@@ -142,6 +142,17 @@ const TaskForm: React.FC<TaskFormProps> = ({
     };
   }, [initialTask]);
 
+  // Helper function to toggle assignee selection for multiple mode
+  const toggleAssigneeSelection = (memberName: string) => {
+    setSelectedAssignees(prev => {
+      if (prev.includes(memberName)) {
+        return prev.filter(name => name !== memberName);
+      } else {
+        return [...prev, memberName];
+      }
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
