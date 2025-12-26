@@ -592,32 +592,6 @@ const TaskBoard = () => {
     // Call the existing progress update function with the new percentage
     await handleProgressUpdate(taskId, newProgress);
 
-    // Show success notification with appropriate message based on update type
-    if (!isAdmin()) {
-      if (isFirstUpdate) {
-        // First update notification
-        await addNotification({
-          title: 'Progress Updated',
-          message: `Task progress has been updated to ${getProgressStateLabel(newState)}. You can only move this task's progress forward from now on.`,
-          type: 'task'
-        });
-      } else {
-        // Forward progress update notification
-        await addNotification({
-          title: 'Progress Updated',
-          message: `Task progress has been updated to ${getProgressStateLabel(newState)}.`,
-          type: 'task'
-        });
-      }
-    } else {
-      // Admin notification
-      await addNotification({
-        title: 'Progress Updated',
-        message: `Task progress has been updated to ${getProgressStateLabel(newState)}`,
-        type: 'task'
-      });
-    }
-
     // Clear the pending update
     setPendingProgressUpdate(null);
   };
@@ -638,21 +612,8 @@ const TaskBoard = () => {
       // Close the delete confirmation modal
       setIsDeleteModalOpen(false);
       setTaskToDelete(null);
-
-      // Add notification
-      await addNotification({
-        title: 'Task Deleted',
-        message: `Task "${taskToDelete.title}" has been deleted`,
-        type: 'task'
-      });
     } catch (error) {
       console.error('Error deleting task:', error);
-
-      await addNotification({
-        title: 'Error',
-        message: 'Failed to delete task. Please try again.',
-        type: 'system'
-      });
     }
   };
 
