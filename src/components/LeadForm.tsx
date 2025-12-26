@@ -346,7 +346,9 @@ const LeadForm: React.FC<LeadFormProps> = ({
                     />
                     {isDuplicateChecking && (
                       <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                        <span className="animate-spin inline-block">⏳</span>
+                        <div className="scale-50">
+                          <GooeyLoader size="small" />
+                        </div>
                       </div>
                     )}
                   </div>
