@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { UserIcon } from 'lucide-react';
+import { GooeyLoader } from './ui/loader-10';
 
 interface AvatarProps {
   src: string | undefined;
