@@ -3,6 +3,7 @@ import { XIcon, UserIcon, MailIcon, ShieldIcon } from 'lucide-react';
 import { addData, updateData } from '../firebase/database';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
+import { GooeyLoader } from './ui/loader-10';
 
 interface User {
   id?: string;
