@@ -105,6 +105,24 @@ const TaskBoard = () => {
     isFirstUpdate?: boolean;
   } | null>(null);
 
+  // Fetch users from Firebase
+  useEffect(() => {
+    const unsubscribe = fetchData<User[]>('users', (data) => {
+      if (data) {
+        const approvedUsers = data.filter(user =>
+          user.approvalStatus === 'approved' || user.role === 'admin'
+        );
+        setUsers(approvedUsers);
+      } else {
+        setUsers([]);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
   // Fetch tasks from Firebase
   useEffect(() => {
     const unsubscribe = fetchData<Task[]>('tasks', (data) => {
