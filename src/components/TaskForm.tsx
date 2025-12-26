@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { XIcon, Loader2Icon, AlertCircleIcon, UserIcon } from 'lucide-react';
+import { XIcon, AlertCircleIcon, UserIcon } from 'lucide-react';
 import { fetchData } from '../firebase/database';
 import Avatar from './Avatar';
 import { useAuth } from '../contexts/AuthContext';
+import { GooeyLoader } from './ui/loader-10';
 
 // Define Task interface
 interface Task {
