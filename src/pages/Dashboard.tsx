@@ -216,12 +216,12 @@ const Dashboard = () => {
       .slice(0, 3); // Limit to 3 activities
   }, [notifications]);
 
-  return <div className="space-y-6 md:space-y-8">
-      <header>
-        <h1 className="font-['Caveat',_cursive] text-3xl md:text-4xl text-[#3a3226] mb-2">
+  return <div className="space-y-4 md:space-y-8">
+      <header className="mb-3 md:mb-0">
+        <h1 className="font-['Caveat',_cursive] text-2xl md:text-4xl text-[#3a3226] mb-1 compact-mobile">
           {getGreeting()}, {firstName}!
         </h1>
-        <p className="text-[#7a7067]">
+        <p className="text-xs md:text-base text-[#7a7067] compact-mobile">
           Here's what's happening with your projects today.
         </p>
       </header>
