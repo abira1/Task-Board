@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircleIcon, XCircleIcon, Loader2Icon } from 'lucide-react';
+import { CheckCircleIcon, XCircleIcon } from 'lucide-react';
+import { GooeyLoader } from './ui/loader-10';
 
 export type SaveStatus = 'idle' | 'saving' | 'success' | 'error';
 
