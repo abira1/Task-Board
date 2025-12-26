@@ -70,10 +70,6 @@ const Layout = () => {
     if (path.includes('/leads')) return 'Lead Management';
     if (path.includes('/team')) return 'Team Management';
     if (path.includes('/progress')) return 'Progress Tracker';
-    if (path.includes('/clients')) return 'Client Management';
-    if (path.includes('/quotations')) return 'Quotations';
-    if (path.includes('/invoices')) return 'Invoices';
-    if (path.includes('/payment-settings')) return 'Payment Settings';
     return 'Toiral Task Board';
   };
 
