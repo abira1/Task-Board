@@ -7,6 +7,7 @@
   "author": "Toiral",
   "scripts": {
     "dev": "npx vite",
+    "start": "npx vite --host 0.0.0.0 --port 3000",
     "build": "npx vite build",
     "build:optimized": "node optimize-build.js",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
