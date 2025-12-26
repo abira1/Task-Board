@@ -45,6 +45,11 @@ interface TaskFormProps {
       name: string;
       avatar: string;
     };
+    assignees?: Array<{
+      name: string;
+      avatar: string;
+    }>;
+    assignmentMode?: 'single' | 'multiple';
   }) => void;
   initialStatus?: 'todo' | 'inProgress' | 'done';
   initialTask?: Task;
