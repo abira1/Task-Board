@@ -145,28 +145,58 @@ const TaskForm: React.FC<TaskFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Find the selected team member
-    const selectedMember = teamMembers.find(member => member.name === assignee);
+    if (assignmentMode === 'single') {
+      // Find the selected team member for single assignment
+      const selectedMember = teamMembers.find(member => member.name === assignee);
 
-    if (!selectedMember && assignee) {
-      alert('Please select a valid team member');
-      return;
-    }
-
-    onSubmit({
-      title,
-      description,
-      priority,
-      status,
-      dueDate: dueDate ? new Date(dueDate) : undefined,
-      assignee: selectedMember ? {
-        name: selectedMember.name,
-        avatar: selectedMember.avatar || '' // Ensure avatar is never undefined
-      } : {
-        name: 'Unassigned',
-        avatar: ''
+      if (!selectedMember && assignee) {
+        alert('Please select a valid team member');
+        return;
       }
-    });
+
+      onSubmit({
+        title,
+        description,
+        priority,
+        status,
+        dueDate: dueDate ? new Date(dueDate) : undefined,
+        assignee: selectedMember ? {
+          name: selectedMember.name,
+          avatar: selectedMember.avatar || ''
+        } : {
+          name: 'Unassigned',
+          avatar: ''
+        },
+        assignmentMode: 'single'
+      });
+    } else {
+      // Handle multiple assignees
+      if (selectedAssignees.length === 0) {
+        alert('Please select at least one team member');
+        return;
+      }
+
+      const assigneesData = selectedAssignees.map(name => {
+        const member = teamMembers.find(m => m.name === name);
+        return {
+          name: member?.name || name,
+          avatar: member?.avatar || ''
+        };
+      });
+
+      // Set the first assignee as the primary assignee for backward compatibility
+      onSubmit({
+        title,
+        description,
+        priority,
+        status,
+        dueDate: dueDate ? new Date(dueDate) : undefined,
+        assignee: assigneesData[0],
+        assignees: assigneesData,
+        assignmentMode: 'multiple'
+      });
+    }
+    
     onClose();
   };
   return (
