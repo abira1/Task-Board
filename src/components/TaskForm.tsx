@@ -67,6 +67,12 @@ const TaskForm: React.FC<TaskFormProps> = ({
   const [status, setStatus] = useState<'todo' | 'inProgress' | 'done'>(initialTask?.status || initialStatus);
   const [dueDate, setDueDate] = useState(initialTask?.dueDate ? new Date(initialTask.dueDate).toISOString().split('T')[0] : '');
   const [assignee, setAssignee] = useState(initialTask?.assignee.name || '');
+  const [assignmentMode, setAssignmentMode] = useState<'single' | 'multiple'>(
+    initialTask?.assignees && initialTask.assignees.length > 0 ? 'multiple' : 'single'
+  );
+  const [selectedAssignees, setSelectedAssignees] = useState<string[]>(
+    initialTask?.assignees ? initialTask.assignees.map(a => a.name) : []
+  );
   const { user, isAdmin } = useAuth();
 
   // State for team members
