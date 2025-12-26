@@ -430,41 +430,41 @@ const Dashboard = () => {
 
       {/* Today's Tasks */}
       <section>
-        <div className="flex justify-between items-center mb-4 md:mb-6">
-          <h2 className="font-['Caveat',_cursive] text-xl md:text-2xl text-[#3a3226]">
+        <div className="flex justify-between items-center mb-3 md:mb-6">
+          <h2 className="font-['Caveat',_cursive] text-lg md:text-2xl text-[#3a3226] compact-mobile">
             Today's Tasks
           </h2>
-          <Link to="/taskboard" className="text-[#d4a5a5] font-medium text-sm md:text-base">View all</Link>
+          <Link to="/taskboard" className="text-[#d4a5a5] font-medium text-xs md:text-base compact-mobile">View all</Link>
         </div>
 
         {loading.tasks ? (
           // Loading skeleton for tasks
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
             {[1, 2].map((i) => (
-              <div key={i} className="bg-white rounded-xl p-5 animate-pulse shadow-sm">
-                <div className="h-5 bg-[#f5f0e8] rounded w-3/4 mb-4"></div>
-                <div className="flex items-center mb-4">
-                  <div className="h-4 bg-[#f5f0e8] rounded w-24 mr-4"></div>
-                  <div className="h-4 bg-[#f5f0e8] rounded w-16"></div>
+              <div key={i} className="bg-white rounded-lg md:rounded-xl p-3 md:p-5 animate-pulse shadow-sm">
+                <div className="h-4 bg-[#f5f0e8] rounded w-3/4 mb-3"></div>
+                <div className="flex items-center mb-3">
+                  <div className="h-3 bg-[#f5f0e8] rounded w-20 mr-3"></div>
+                  <div className="h-3 bg-[#f5f0e8] rounded w-12"></div>
                 </div>
-                <div className="h-2 bg-[#f5f0e8] rounded-full mb-4"></div>
+                <div className="h-1.5 bg-[#f5f0e8] rounded-full mb-3"></div>
                 <div className="flex justify-between items-center">
                   <div className="flex items-center">
-                    <div className="w-8 h-8 rounded-full bg-[#f5f0e8] mr-2"></div>
-                    <div className="h-3 bg-[#f5f0e8] rounded w-16"></div>
+                    <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-[#f5f0e8] mr-2"></div>
+                    <div className="h-2 bg-[#f5f0e8] rounded w-12"></div>
                   </div>
-                  <div className="h-4 bg-[#f5f0e8] rounded w-16"></div>
+                  <div className="h-3 bg-[#f5f0e8] rounded w-12"></div>
                 </div>
               </div>
             ))}
           </div>
         ) : todaysTasks.length === 0 ? (
           // Empty state
-          <div className="bg-white rounded-xl p-5 md:p-6 text-center shadow-sm">
-            <p className="text-[#7a7067] mb-4">No tasks due today</p>
+          <div className="bg-white rounded-lg md:rounded-xl p-4 md:p-6 text-center shadow-sm">
+            <p className="text-[#7a7067] mb-3 md:mb-4 text-xs md:text-base compact-mobile">No tasks due today</p>
             <Link
               to="/taskboard"
-              className="inline-block px-4 py-3 bg-[#d4a5a5] text-white rounded-lg"
+              className="inline-block px-4 py-2.5 md:py-3 bg-[#d4a5a5] text-white rounded-lg text-xs md:text-base compact-mobile"
             >
               View all tasks
             </Link>
@@ -473,8 +473,8 @@ const Dashboard = () => {
           // Mobile: Horizontal scroll for tasks, Desktop: Grid
           <>
             {/* Mobile Task Scroll */}
-            <div className="md:hidden overflow-x-auto pb-4">
-              <div className="flex space-x-4 min-w-max px-1">
+            <div className="md:hidden overflow-x-auto pb-3 -mx-3 px-3">
+              <div className="flex space-x-3 min-w-max">
                 {todaysTasks.map(task => {
                   // Format due date for display
                   const formatDueDate = (dateString?: string) => {
@@ -495,7 +495,7 @@ const Dashboard = () => {
                   return (
                     <div
                       key={task.id}
-                      className="w-[280px] flex-shrink-0"
+                      className="w-[240px] flex-shrink-0"
                       onClick={() => navigate(`/taskboard?task=${task.id}`)}
                     >
                       <TaskCard
