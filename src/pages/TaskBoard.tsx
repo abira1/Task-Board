@@ -725,34 +725,34 @@ const TaskBoard = () => {
     }
   };
   return <div>
-      <header className="mb-6 md:mb-8">
-        <div className="mb-4">
-          <h1 className="font-['Caveat',_cursive] text-3xl md:text-4xl text-[#3a3226] mb-2">
+      <header className="mb-4 md:mb-8">
+        <div className="mb-3 md:mb-4">
+          <h1 className="font-['Caveat',_cursive] text-2xl md:text-4xl text-[#3a3226] mb-1 compact-mobile">
             Task Board
           </h1>
-          <p className="text-[#7a7067]">View and manage tasks by team member</p>
+          <p className="text-[#7a7067] text-xs md:text-base compact-mobile">View and manage tasks by team member</p>
         </div>
 
         {/* Filter and Add Task Controls */}
-        <div className="flex flex-col sm:flex-row gap-4 mt-4">
+        <div className="flex flex-col sm:flex-row gap-2 md:gap-4 mt-3 md:mt-4">
           {/* Filter Dropdown for Mobile */}
           <div className="relative sm:hidden w-full">
             <button
-              className="flex items-center justify-between w-full px-4 py-3 bg-white text-[#7a7067] rounded-lg border border-[#f5f0e8]"
+              className="flex items-center justify-between w-full px-3 py-2.5 bg-white text-[#7a7067] rounded-lg border border-[#f5f0e8] text-xs compact-mobile"
               onClick={() => document.getElementById('mobile-filters')?.classList.toggle('hidden')}
             >
               <span className="flex items-center">
-                <FilterIcon className="h-4 w-4 mr-2" />
+                <FilterIcon className="h-3.5 w-3.5 mr-1.5" />
                 <span>Filter Tasks</span>
               </span>
-              <ChevronDownIcon className="h-4 w-4" />
+              <ChevronDownIcon className="h-3.5 w-3.5" />
             </button>
 
-            <div id="mobile-filters" className="hidden absolute z-10 mt-2 w-full bg-white rounded-lg shadow-lg border border-[#f5f0e8] p-4 space-y-4">
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-[#3a3226]">Priority</label>
+            <div id="mobile-filters" className="hidden absolute z-10 mt-2 w-full bg-white rounded-lg shadow-lg border border-[#f5f0e8] p-3 space-y-3">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-medium text-[#3a3226] compact-mobile">Priority</label>
                 <select
-                  className="w-full bg-[#f5f0e8] text-[#7a7067] px-4 py-3 rounded-lg"
+                  className="w-full bg-[#f5f0e8] text-[#7a7067] px-3 py-2.5 rounded-lg text-xs compact-mobile"
                   value={filterPriority}
                   onChange={e => setFilterPriority(e.target.value)}
                 >
@@ -763,10 +763,10 @@ const TaskBoard = () => {
                 </select>
               </div>
 
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-[#3a3226]">Status</label>
+              <div className="space-y-1.5">
+                <label className="block text-xs font-medium text-[#3a3226] compact-mobile">Status</label>
                 <select
-                  className="w-full bg-[#f5f0e8] text-[#7a7067] px-4 py-3 rounded-lg"
+                  className="w-full bg-[#f5f0e8] text-[#7a7067] px-3 py-2.5 rounded-lg text-xs compact-mobile"
                   value={filterStatus}
                   onChange={e => setFilterStatus(e.target.value)}
                 >
@@ -806,10 +806,10 @@ const TaskBoard = () => {
           {/* Add Task Button */}
           {isAdmin() && (
             <button
-              className="flex items-center justify-center px-4 py-3 bg-[#d4a5a5] text-white rounded-lg w-full sm:w-auto"
+              className="flex items-center justify-center px-3 md:px-4 py-2.5 md:py-3 bg-[#d4a5a5] text-white rounded-lg w-full sm:w-auto text-xs md:text-base compact-mobile"
               onClick={() => setIsAddTaskModalOpen(true)}
             >
-              <PlusIcon className="h-5 w-5 mr-2" />
+              <PlusIcon className="h-4 w-4 md:h-5 md:w-5 mr-1.5 md:mr-2" />
               <span>Add Task</span>
             </button>
           )}
