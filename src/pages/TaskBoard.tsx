@@ -560,13 +560,6 @@ const TaskBoard = () => {
       });
 
       setEditingTask(null);
-
-      // Add notification
-      await addNotification({
-        title: 'Task Updated',
-        message: `Task "${updatedTaskFormData.title}" has been updated`,
-        type: 'task'
-      });
     } catch (error) {
       console.error('Error updating task:', error);
     }
@@ -575,11 +568,7 @@ const TaskBoard = () => {
   // Function to open delete confirmation modal
   const confirmDeleteTask = (taskId: string, taskTitle: string) => {
     if (!isAdmin()) {
-      addNotification({
-        title: 'Access Denied',
-        message: 'Only administrators can delete tasks',
-        type: 'system'
-      });
+      // Silently return - no notification
       return;
     }
 
