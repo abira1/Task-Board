@@ -9,14 +9,8 @@ import {
   XIcon,
   LogOutIcon,
   BellIcon,
-  UserIcon,
   BuildingIcon,
-  DownloadIcon,
-  BarChart3Icon,
-  Users2Icon,
-  FileTextIcon,
-  ReceiptIcon,
-  CreditCardIcon
+  BarChart3Icon
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
