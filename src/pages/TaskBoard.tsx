@@ -556,6 +556,11 @@ const TaskBoard = () => {
       name: string;
       avatar: string;
     };
+    assignees?: Array<{
+      name: string;
+      avatar: string;
+    }>;
+    assignmentMode?: 'single' | 'multiple';
   }) => {
     try {
       const originalTask = tasks.find(t => t.id === taskId);
@@ -565,12 +570,20 @@ const TaskBoard = () => {
       const validatedAssignee = ensureValidAssignee(updatedTaskFormData.assignee);
 
       // Convert Date object to ISO string if it exists
-      const taskWithStringDate = {
+      const taskWithStringDate: any = {
         ...updatedTaskFormData,
         assignee: validatedAssignee,
         dueDate: updatedTaskFormData.dueDate ? updatedTaskFormData.dueDate.toISOString() : undefined,
         updatedAt: new Date().toISOString()
       };
+
+      // Add assignees if multiple assignment mode
+      if (updatedTaskFormData.assignmentMode === 'multiple' && updatedTaskFormData.assignees) {
+        taskWithStringDate.assignees = updatedTaskFormData.assignees;
+      } else {
+        // Remove assignees if switching back to single mode
+        taskWithStringDate.assignees = null;
+      }
 
       // Create history item for this action
       const historyItem: TaskHistoryItem = {
