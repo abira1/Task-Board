@@ -16,19 +16,11 @@ export interface Notification {
   timestamp: string; // Store as ISO string for Firebase compatibility
   read: boolean; // Legacy field, kept for backward compatibility
   seenBy: SeenStatus; // Track which users have seen this notification
-  sound?: boolean; // Whether to play sound for this notification
+  targetUserId?: string; // Optional: specific user this notification is for
 }
 
 // Type for creating a new notification
-type NewNotification = Omit<Notification, 'id' | 'timestamp' | 'read' | 'seenBy'> & {
-  sound?: boolean;
-};
-
-// Type for notification settings
-interface NotificationSettings {
-  soundEnabled: boolean;
-  volume: number;
-}
+type NewNotification = Omit<Notification, 'id' | 'timestamp' | 'read' | 'seenBy'>;
 
 interface NotificationContextType {
   notifications: Notification[];
@@ -40,9 +32,6 @@ interface NotificationContextType {
   loading: boolean;
   hasNewNotifications: boolean;
   clearNewNotificationsFlag: () => void;
-  notificationSettings: NotificationSettings;
-  updateNotificationSettings: (settings: Partial<NotificationSettings>) => void;
-  toggleSound: () => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
