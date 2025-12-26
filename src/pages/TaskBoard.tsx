@@ -286,12 +286,16 @@ const TaskBoard = () => {
 
       setIsAddTaskModalOpen(false);
 
-      // Add notification
-      await addNotification({
-        title: 'New Task Created',
-        message: `Task "${taskWithStringDate.title}" has been assigned to ${taskWithStringDate.assignee.name}`,
-        type: 'task'
-      });
+      // Add notification only to the assigned person
+      const assignedUser = users.find(u => u.name === taskWithStringDate.assignee.name);
+      if (assignedUser && isAdmin()) {
+        await addNotification({
+          title: 'New Task Assigned',
+          message: `You have been assigned the task: "${taskWithStringDate.title}"`,
+          type: 'task',
+          targetUserId: assignedUser.id
+        });
+      }
     } catch (error) {
       console.error('Error adding task:', error);
     }
