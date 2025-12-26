@@ -23,11 +23,9 @@ import {
 import { useNotifications } from '../contexts/NotificationContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useLeads, Lead } from '../contexts/LeadContext';
-import { useClients } from '../contexts/ClientContext';
 import LeadForm from '../components/LeadForm';
 import Avatar from '../components/Avatar';
 import { debounce } from 'lodash';
-import { useNavigate } from 'react-router-dom';
 import ConfirmationDialog from '../components/ConfirmationDialog';
 import LeadProgressDropdown from '../components/LeadProgressDropdown';
 
