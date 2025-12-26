@@ -180,7 +180,15 @@ const TaskBoard = () => {
       const statusMatch = filterStatus === 'all' || task.status === filterStatus;
       return priorityMatch && statusMatch;
     });
-    return filtered.reduce((acc, task) => {
+    
+    // Sort filtered tasks by date/time (newest first)
+    const sortedFiltered = filtered.sort((a, b) => {
+      const dateA = new Date(a.createdAt || a.updatedAt || 0).getTime();
+      const dateB = new Date(b.createdAt || b.updatedAt || 0).getTime();
+      return dateB - dateA; // Descending order (newest first)
+    });
+    
+    return sortedFiltered.reduce((acc, task) => {
       const memberName = task.assignee.name;
       if (!acc[memberName]) {
         acc[memberName] = {
