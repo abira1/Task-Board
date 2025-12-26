@@ -255,6 +255,11 @@ const TaskBoard = () => {
       name: string;
       avatar: string;
     };
+    assignees?: Array<{
+      name: string;
+      avatar: string;
+    }>;
+    assignmentMode?: 'single' | 'multiple';
   }) => {
     try {
       // Ensure assignee has valid data
@@ -271,11 +276,13 @@ const TaskBoard = () => {
           name: user?.name || 'Anonymous',
           avatar: user?.avatar || ''
         },
-        details: 'Task was created'
+        details: newTaskFormData.assignmentMode === 'multiple' && newTaskFormData.assignees 
+          ? `Task was created and assigned to ${newTaskFormData.assignees.length} member(s)`
+          : 'Task was created'
       };
 
       // Convert Date object to ISO string if it exists
-      const taskWithStringDate = {
+      const taskWithStringDate: any = {
         ...newTaskFormData,
         assignee: validatedAssignee,
         dueDate: newTaskFormData.dueDate ? newTaskFormData.dueDate.toISOString() : undefined,
@@ -285,20 +292,43 @@ const TaskBoard = () => {
         history: [historyItem]
       };
 
+      // Add assignees if multiple assignment mode
+      if (newTaskFormData.assignmentMode === 'multiple' && newTaskFormData.assignees) {
+        taskWithStringDate.assignees = newTaskFormData.assignees;
+      }
+
       // Add task to Firebase
       await addData('tasks', taskWithStringDate);
 
       setIsAddTaskModalOpen(false);
 
-      // Add notification only to the assigned person
-      const assignedUser = users.find(u => u.name === taskWithStringDate.assignee.name);
-      if (assignedUser && isAdmin()) {
-        await addNotification({
-          title: 'New Task Assigned',
-          message: `You have been assigned the task: "${taskWithStringDate.title}"`,
-          type: 'task',
-          targetUserId: assignedUser.id
-        });
+      // Add notification to assigned members
+      if (isAdmin()) {
+        if (newTaskFormData.assignmentMode === 'multiple' && newTaskFormData.assignees) {
+          // Send notification to all assigned members
+          for (const assignee of newTaskFormData.assignees) {
+            const assignedUser = users.find(u => u.name === assignee.name);
+            if (assignedUser) {
+              await addNotification({
+                title: 'New Task Assigned',
+                message: `You have been assigned the task: "${taskWithStringDate.title}"`,
+                type: 'task',
+                targetUserId: assignedUser.id
+              });
+            }
+          }
+        } else {
+          // Send notification to single assignee
+          const assignedUser = users.find(u => u.name === taskWithStringDate.assignee.name);
+          if (assignedUser) {
+            await addNotification({
+              title: 'New Task Assigned',
+              message: `You have been assigned the task: "${taskWithStringDate.title}"`,
+              type: 'task',
+              targetUserId: assignedUser.id
+            });
+          }
+        }
       }
     } catch (error) {
       console.error('Error adding task:', error);
