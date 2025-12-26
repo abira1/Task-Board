@@ -3,6 +3,7 @@ import { XIcon, AlertCircleIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import { Lead, NewLead, useLeads } from '../contexts/LeadContext';
+import { GooeyLoader } from './ui/loader-10';
 
 interface LeadFormProps {
   onClose: () => void;
