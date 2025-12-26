@@ -45,6 +45,10 @@ interface Task {
     name: string;
     avatar: string;
   };
+  assignees?: Array<{
+    name: string;
+    avatar: string;
+  }>;
   progress?: number;
   comments?: TaskComment[];
   history?: TaskHistoryItem[];
