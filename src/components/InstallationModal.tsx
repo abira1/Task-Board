@@ -67,10 +67,10 @@ const InstallationModal: React.FC<InstallationModalProps> = ({
                 } transition-colors disabled:opacity-70`}
               >
                 {isDownloading ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  <div className="flex items-center gap-2">
+                    <GooeyLoader size="small" />
                     <span>Generating shortcut...</span>
-                  </>
+                  </div>
                 ) : downloadSuccess === true ? (
                   <>
                     <CheckIcon className="h-5 w-5 mr-2" />
