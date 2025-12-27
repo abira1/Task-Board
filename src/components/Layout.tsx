@@ -286,11 +286,14 @@ const Layout = () => {
         </div>
       </aside>
 
-      {/* Main content */}
-      <main className="flex-1 pt-14 md:pt-6 p-3 sm:p-4 md:p-10 md:ml-64 overflow-y-auto transition-all duration-300">
+      {/* Main content - Add bottom padding on mobile for bottom nav */}
+      <main className="flex-1 pt-14 md:pt-6 p-3 sm:p-4 md:p-10 md:ml-64 pb-20 md:pb-10 overflow-y-auto transition-all duration-300">
         <Outlet />
         {user && <NotificationAlert />}
       </main>
+
+      {/* Bottom Navigation - Mobile Only */}
+      <BottomNavigation />
     </div>
   );
 };
