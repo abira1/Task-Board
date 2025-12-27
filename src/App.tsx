@@ -49,9 +49,16 @@ export function App() {
     };
   }, []);
 
-  // Loading component for Suspense fallback
-  const LoadingFallback = () => (
+  // Loading component for Suspense fallback - Full screen for login/initial pages
+  const FullScreenLoadingFallback = () => (
     <div className="flex justify-center items-center h-screen bg-[#f5f0e8]">
+      <GooeyLoader size="medium" />
+    </div>
+  );
+
+  // Loading component for page transitions - doesn't cover navbar
+  const PageLoadingFallback = () => (
+    <div className="flex justify-center items-center h-full min-h-[60vh] bg-[#f5f0e8]">
       <GooeyLoader size="medium" />
     </div>
   );
@@ -63,7 +70,7 @@ export function App() {
           <Router>
             {/* Preload critical resources */}
             <PreloadResources />
-            <Suspense fallback={<LoadingFallback />}>
+            <Suspense fallback={<FullScreenLoadingFallback />}>
               <Routes>
                 <Route path="/" element={<LoginPage />} />
                 <Route path="/download" element={<DownloadPage />} />
@@ -77,17 +84,43 @@ export function App() {
                     <Layout />
                   </ProtectedRoute>
                 }>
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/taskboard" element={<TaskBoard />} />
-                  <Route path="/notifications" element={<NotificationsPage />} />
+                  <Route path="/dashboard" element={
+                    <Suspense fallback={<PageLoadingFallback />}>
+                      <Dashboard />
+                    </Suspense>
+                  } />
+                  <Route path="/taskboard" element={
+                    <Suspense fallback={<PageLoadingFallback />}>
+                      <TaskBoard />
+                    </Suspense>
+                  } />
+                  <Route path="/notifications" element={
+                    <Suspense fallback={<PageLoadingFallback />}>
+                      <NotificationsPage />
+                    </Suspense>
+                  } />
                   <Route path="/team" element={
                     <ProtectedRoute requiresAdmin>
-                      <TeamManagement />
+                      <Suspense fallback={<PageLoadingFallback />}>
+                        <TeamManagement />
+                      </Suspense>
                     </ProtectedRoute>
                   } />
-                  <Route path="/progress" element={<ProgressTracker />} />
-                  <Route path="/calendar" element={<CalendarView />} />
-                  <Route path="/leads" element={<LeadManagement />} />
+                  <Route path="/progress" element={
+                    <Suspense fallback={<PageLoadingFallback />}>
+                      <ProgressTracker />
+                    </Suspense>
+                  } />
+                  <Route path="/calendar" element={
+                    <Suspense fallback={<PageLoadingFallback />}>
+                      <CalendarView />
+                    </Suspense>
+                  } />
+                  <Route path="/leads" element={
+                    <Suspense fallback={<PageLoadingFallback />}>
+                      <LeadManagement />
+                    </Suspense>
+                  } />
                 </Route>
               </Routes>
             </Suspense>
