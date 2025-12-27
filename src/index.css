@@ -51,3 +51,44 @@ code {
     min-width: 44px;
   }
 }
+
+/* iOS Safe Area Support for Bottom Navigation */
+:root {
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Prevent content from going under bottom nav on mobile */
+@media (max-width: 768px) {
+  main {
+    padding-bottom: calc(80px + var(--safe-area-inset-bottom)) !important;
+  }
+}
+
+/* Animations for modals and sheets */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.2s ease-in-out;
+}
