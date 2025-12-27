@@ -16,6 +16,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import Avatar from './Avatar';
 import NotificationAlert from './NotificationAlert';
+import BottomNavigation from './BottomNavigation';
 
 const Layout = () => {
   const {
